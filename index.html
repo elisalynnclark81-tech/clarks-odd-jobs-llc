@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clark's Odd Jobs">
+<link rel="manifest" href="manifest.json">
+<title>Clark's Odd Jobs</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --orange:#E8620A; --orange-dark:#C4520A; --orange-light:#FF8C38;
+  --black:#0E0E0E; --dark:#181818; --sidebar-bg:#141414;
+  --card:#1C1C1C; --border:#2A2A2A; --surface:#222222;
+  --white:#FFFFFF; --gray:#808080; --gray-light:#AAAAAA;
+  --green:#27AE60; --yellow:#F39C12; --red:#E74C3C;
+}
+html,body { height:100%; overflow:hidden; }
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--black); color:var(--white); display:flex; font-size:14px; }
+
+/* ── SIDEBAR ── */
+#sidebar { width:240px; min-width:240px; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; transition:width .2s,min-width .2s; overflow:hidden; z-index:200; }
+#sidebar.collapsed { width:58px; min-width:58px; }
+.sb-logo { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.sb-logo-icon { width:36px; height:36px; background:var(--orange); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.sb-logo-text { flex:1; overflow:hidden; }
+.sb-logo-text .t1 { font-size:14px; font-weight:800; color:var(--white); white-space:nowrap; }
+.sb-logo-text .t1 span { color:var(--orange); }
+.sb-logo-text .t2 { font-size:10px; color:var(--gray); white-space:nowrap; }
+.sb-collapse { background:none; border:none; color:var(--gray); cursor:pointer; font-size:14px; padding:4px; flex-shrink:0; }
+.sb-section { padding:6px 0; border-bottom:1px solid var(--border); }
+.sb-label { padding:6px 16px 2px; font-size:10px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.8px; white-space:nowrap; overflow:hidden; }
+.sb-item { display:flex; align-items:center; gap:12px; padding:10px 16px; cursor:pointer; color:var(--gray-light); transition:all .15s; white-space:nowrap; overflow:hidden; border-left:3px solid transparent; user-select:none; }
+.sb-item:hover { background:var(--surface); color:var(--white); }
+.sb-item.active { background:rgba(232,98,10,.15); color:var(--orange); border-left-color:var(--orange); }
+.sb-icon { font-size:15px; flex-shrink:0; width:20px; text-align:center; }
+.sb-text { font-size:13px; font-weight:500; }
+.sb-badge { margin-left:auto; background:var(--orange); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; flex-shrink:0; }
+#sidebar.collapsed .sb-label,
+#sidebar.collapsed .sb-text,
+#sidebar.collapsed .sb-badge,
+#sidebar.collapsed .sb-logo-text { display:none; }
+
+/* ── MAIN ── */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.topbar { height:54px; background:var(--dark); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 18px; gap:14px; flex-shrink:0; }
+.topbar-title { font-size:15px; font-weight:700; }
+.topbar-sub { font-size:11px; color:var(--gray); }
+.topbar-right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+#content { flex:1; overflow-y:auto; padding:18px; }
+
+/* ── BUTTONS ── */
+.btn { padding:8px 14px; border-radius:7px; border:none; cursor:pointer; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:all .15s; white-space:nowrap; }
+.btn-primary { background:var(--orange); color:#fff; }
+.btn-primary:hover { background:var(--orange-dark); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--gray-light); }
+.btn-outline:hover { border-color:var(--orange); color:var(--orange); }
+.btn-green { background:var(--green); color:#fff; }
+.btn-red { background:var(--red); color:#fff; }
+.btn-sm { padding:5px 10px; font-size:12px; border-radius:5px; }
+.btn-xs { padding:3px 8px; font-size:11px; border-radius:4px; }
+
+/* ── VIEWS ── */
+.view { display:none; }
+.view.active { display:block; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.stat-lbl { font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; font-weight:600; }
+.stat-val { font-size:24px; font-weight:800; }
+.stat-val.o { color:var(--orange); }
+.stat-val.g { color:var(--green); }
+.stat-val.y { color:var(--yellow); }
+.stat-sub { font-size:11px; color:var(--gray); margin-top:3px; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.sec-title { font-size:15px; font-weight:700; }
+.sec-title span { color:var(--orange); }
+
+/* ── JOB CARDS ── */
+.job-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; transition:border-color .15s; }
+.job-card:hover { border-color:var(--orange); }
+.job-card.done { opacity:.55; border-style:dashed; }
+.jc-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--border); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-top:1px; font-size:13px; font-weight:700; }
+.jc-check.on { background:var(--green); border-color:var(--green); color:#fff; }
+.jc-info { flex:1; min-width:0; }
+.jc-client { font-size:14px; font-weight:700; }
+.jc-addr { font-size:12px; color:var(--gray); margin-top:2px; }
+.jc-tasks { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.task-chip { font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600; cursor:pointer; }
+.tc-pending { background:rgba(232,98,10,.15); color:var(--orange-light); }
+.tc-done { background:rgba(39,174,96,.15); color:var(--green); text-decoration:line-through; opacity:.7; }
+.jc-actions { display:flex; flex-direction:column; gap:5px; align-items:flex-end; flex-shrink:0; }
+.jc-phone { font-size:12px; color:var(--orange); }
+.jc-date { font-size:11px; color:var(--gray); }
+
+/* ── UPCOMING ── */
+.up-item { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:11px 13px; display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.up-datebox { background:var(--orange); border-radius:6px; padding:6px 10px; text-align:center; min-width:44px; flex-shrink:0; }
+.up-day { font-size:18px; font-weight:800; line-height:1; }
+.up-mon { font-size:10px; font-weight:700; text-transform:uppercase; }
+.up-info { flex:1; min-width:0; }
+.up-client { font-size:13px; font-weight:700; }
+.up-detail { font-size:11px; color:var(--gray); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── CALENDAR ── */
+.cal-hdr { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.cal-nav { background:var(--surface); border:1px solid var(--border); color:var(--white); padding:6px 12px; border-radius:6px; cursor:pointer; }
+.cal-month { font-size:17px; font-weight:800; }
+.cal-grid { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.cal-dnames { display:grid; grid-template-columns:repeat(7,1fr); background:var(--surface); }
+.cal-dname { padding:9px; text-align:center; font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; }
+.cal-cells { display:grid; grid-template-columns:repeat(7,1fr); }
+.cal-cell { min-height:88px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:5px; }
+.cal-cell:nth-child(7n) { border-right:none; }
+.cal-cell.other { opacity:.35; }
+.cal-cell.today { background:rgba(232,98,10,.07); }
+.cal-date-num { font-size:12px; font-weight:600; color:var(--gray-light); margin-bottom:3px; }
+.cal-cell.today .cal-date-num { color:var(--orange); }
+.cal-ev { font-size:10px; padding:2px 5px; border-radius:3px; margin-bottom:2px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; border-left:3px solid; }
+.ev-mow { background:rgba(232,98,10,.2); color:var(--orange-light); border-color:var(--orange); }
+.ev-gutter { background:rgba(39,174,96,.2); color:var(--green); border-color:var(--green); }
+.ev-landscape { background:rgba(52,152,219,.2); color:#5DADE2; border-color:#5DADE2; }
+.ev-handyman { background:rgba(155,89,182,.2); color:#BB8FCE; border-color:#BB8FCE; }
+.ev-done { opacity:.45; text-decoration:line-through; }
+
+/* ── TABLE ── */
+.data-table { width:100%; border-collapse:collapse; }
+.data-table th { text-align:left; padding:10px 13px; font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+.data-table td { padding:11px 13px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+.data-table tr:hover td { background:var(--surface); }
+.data-table tr:last-child td { border-bottom:none; }
+.badge { padding:3px 9px; border-radius:4px; font-size:11px; font-weight:700; }
+.b-green { background:rgba(39,174,96,.15); color:var(--green); }
+.b-yellow { background:rgba(243,156,18,.15); color:var(--yellow); }
+.b-red { background:rgba(231,76,60,.15); color:var(--red); }
+.b-gray { background:rgba(128,128,128,.15); color:var(--gray); }
+
+/* ── ROUTE VIEW ── */
+.route-stop { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:14px; margin-bottom:10px; }
+.route-num { width:32px; height:32px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0; }
+.route-info { flex:1; }
+.route-client { font-size:15px; font-weight:700; }
+.route-addr { font-size:12px; color:var(--gray-light); margin-top:3px; }
+.route-tasks { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.route-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.maps-btn { background:rgba(232,98,10,.15); color:var(--orange-light); border:1px solid var(--orange); padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+
+/* ── MODALS ── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--dark); border:1px solid var(--border); border-radius:12px; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; }
+.modal-lg { max-width:680px; }
+.modal-hdr { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--dark); z-index:1; }
+.modal-title { font-size:16px; font-weight:700; }
+.modal-x { background:none; border:none; color:var(--gray); font-size:22px; cursor:pointer; line-height:1; }
+.modal-body { padding:20px; }
+.modal-ftr { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; position:sticky; bottom:0; background:var(--dark); }
+
+/* ── FORMS ── */
+.fg { margin-bottom:14px; }
+.flbl { font-size:12px; font-weight:700; color:var(--gray-light); margin-bottom:5px; display:block; }
+.fi, .fsel, .fta { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--white); padding:9px 12px; border-radius:7px; font-size:13px; outline:none; transition:border-color .15s; font-family:inherit; }
+.fi:focus,.fsel:focus,.fta:focus { border-color:var(--orange); }
+.fsel option { background:var(--dark); }
+.fta { min-height:78px; resize:vertical; }
+.frow { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.frow3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+/* ── TASK CHECKLIST ── */
+.task-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.tci { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--surface); border-radius:6px; border:1px solid var(--border); cursor:pointer; transition:all .15s; }
+.tci:hover { border-color:var(--orange); }
+.tci.on { border-color:var(--orange); background:rgba(232,98,10,.1); }
+.tci input { accent-color:var(--orange); width:15px; height:15px; cursor:pointer; }
+.tci label { font-size:12px; cursor:pointer; font-weight:500; }
+
+/* ── PHOTOS ── */
+.photo-drop { border:2px dashed var(--border); border-radius:8px; padding:22px; text-align:center; cursor:pointer; transition:border-color .15s; }
+.photo-drop:hover { border-color:var(--orange); }
+.photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.photo-wrap { position:relative; }
+.photo-img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block; }
+.photo-del { position:absolute; top:4px; right:4px; background:var(--red); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+/* ── INVOICE ── */
+.inv-box { background:#fff; color:#111; border-radius:8px; padding:24px; font-size:13px; }
+.inv-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; gap:12px; }
+.inv-brand-name { font-size:22px; font-weight:900; color:var(--orange); }
+.inv-tagline { font-size:11px; color:#666; margin-top:2px; }
+.inv-contact { font-size:11px; color:#444; margin-top:6px; line-height:1.7; }
+.inv-meta { text-align:right; font-size:12px; color:#555; line-height:1.8; }
+.inv-meta strong { color:#111; }
+.inv-bill { background:#f7f7f7; border-radius:6px; padding:12px; margin-bottom:16px; }
+.inv-bill-lbl { font-size:10px; font-weight:700; text-transform:uppercase; color:#888; letter-spacing:.5px; margin-bottom:5px; }
+.inv-bill-name { font-size:14px; font-weight:700; }
+.inv-table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+.inv-table th { background:#111; color:#fff; padding:8px 10px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.inv-table td { padding:8px 10px; border-bottom:1px solid #eee; }
+.inv-table .total-row td { font-weight:800; font-size:14px; border-top:2px solid #111; border-bottom:none; }
+.inv-pay { background:#fff9f5; border:1px solid #FCDAB0; border-radius:6px; padding:12px; margin-bottom:16px; }
+.inv-pay-title { font-size:11px; font-weight:700; text-transform:uppercase; color:#888; margin-bottom:6px; }
+.inv-pay-methods { display:flex; flex-wrap:wrap; gap:6px; }
+.inv-pay-pill { background:#111; color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.inv-footer { text-align:center; font-size:11px; color:#999; border-top:1px solid #eee; padding-top:12px; line-height:1.8; }
+.inv-vet { display:inline-block; background:#E8620A; color:#fff; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:800; letter-spacing:.5px; }
+
+/* ── SYNC VIEW ── */
+.sync-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:22px; max-width:580px; }
+.sync-step { display:flex; gap:12px; margin-bottom:14px; }
+.sync-step-num { width:26px; height:26px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+.sync-step-text { font-size:13px; color:var(--gray-light); line-height:1.6; padding-top:2px; }
+.sync-step-text strong { color:var(--white); }
+
+/* ── SEARCH ── */
+.search-wrap { position:relative; }
+.search-wrap input { background:var(--surface); border:1px solid var(--border); color:var(--white); padding:8px 12px 8px 34px; border-radius:7px; font-size:13px; outline:none; width:200px; }
+.search-wrap input:focus { border-color:var(--orange); }
+.search-ico { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--gray); font-size:14px; pointer-events:none; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:20px; right:20px; padding:12px 18px; border-radius:8px; font-size:13px; font-weight:700; z-index:9999; transform:translateY(80px); transition:transform .3s; box-shadow:0 4px 20px rgba(0,0,0,.5); color:#fff; }
+.toast.show { transform:translateY(0); }
+
+/* ── DIVIDER ── */
+.divider { height:1px; background:var(--border); margin:16px 0; }
+.empty-state { text-align:center; padding:36px 20px; color:var(--gray); }
+.es-ico { font-size:38px; margin-bottom:10px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--black); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* ── MOBILE ── */
+@media(max-width:700px) {
+  #sidebar { position:fixed; top:0; left:0; bottom:0; width:240px; transform:translateX(-100%); transition:transform .25s; }
+  #sidebar.mobile-open { transform:translateX(0); }
+  #sidebar.collapsed { width:240px; transform:translateX(-100%); }
+  #sidebar.collapsed .sb-label,#sidebar.collapsed .sb-text,#sidebar.collapsed .sb-badge,#sidebar.collapsed .sb-logo-text { display:block; }
+  .mob-menu { display:flex !important; }
+  .stats-row { grid-template-columns:1fr 1fr; }
+  .dashboard-cols { grid-template-columns:1fr !important; }
+  .frow { grid-template-columns:1fr; }
+  .frow3 { grid-template-columns:1fr 1fr; }
+  .search-wrap input { width:140px; }
+  .topbar-sub { display:none; }
+}
+.mob-menu { display:none; background:none; border:none; color:var(--white); font-size:22px; cursor:pointer; }
+#mob-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:199; }
+#mob-overlay.show { display:block; }
+</style>
+</head>
+<body>
+
+<!-- MOBILE OVERLAY -->
+<div id="mob-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">✂</div>
+    <div class="sb-logo-text">
+      <div class="t1"><span>Clark's</span> Odd Jobs</div>
+      <div class="t2">Veteran-Owned · Iowa City, IA</div>
+    </div>
+    <button class="sb-collapse" onclick="toggleSidebar()">◀</button>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Main</div>
+    <div class="sb-item active" onclick="showView('dashboard')"><span class="sb-icon">⊞</span><span class="sb-text">Dashboard</span></div>
+    <div class="sb-item" onclick="showView('route')"><span class="sb-icon">🗺</span><span class="sb-text">Today's Route</span><span class="sb-badge" id="route-badge">0</span></div>
+    <div class="sb-item" onclick="showView('schedule')"><span class="sb-icon">📅</span><span class="sb-text">Schedule</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Clients</div>
+    <div class="sb-item" onclick="showView('clients')"><span class="sb-icon">👥</span><span class="sb-text">All Clients</span></div>
+    <div class="sb-item" onclick="openClientModal()"><span class="sb-icon">➕</span><span class="sb-text">Add Client</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Billing</div>
+    <div class="sb-item" onclick="showView('invoices')"><span class="sb-icon">💵</span><span class="sb-text">Invoices</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Settings</div>
+    <div class="sb-item" onclick="showView('sync')"><span class="sb-icon">🔗</span><span class="sb-text">Google Sheets Sync</span></div>
+    <div class="sb-item" onclick="showView('github')"><span class="sb-icon">🚀</span><span class="sb-text">GitHub Hosting</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <button class="mob-menu" id="mob-menu-btn" onclick="openMobileMenu()">☰</button>
+    <div>
+      <div class="topbar-title" id="tb-title">Dashboard</div>
+      <div class="topbar-sub">Clark's Odd Jobs LLC · (319) 325-9383</div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-wrap"><span class="search-ico">🔍</span><input type="text" placeholder="Search..." oninput="searchClients(this.value)" id="search-input"></div>
+      <button class="btn btn-outline btn-sm" onclick="openJobModal()">+ Job</button>
+      <button class="btn btn-primary btn-sm" onclick="openClientModal()">+ Client</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-lbl">Total Clients</div><div class="stat-val o" id="st-clients">0</div><div class="stat-sub">Active accounts</div></div>
+        <div class="stat-card"><div class="stat-lbl">Jobs This Month</div><div class="stat-val" id="st-jobs">0</div><div class="stat-sub">Scheduled visits</div></div>
+        <div class="stat-card"><div class="stat-lbl">Collected</div><div class="stat-val g" id="st-rev">$0</div><div class="stat-sub">Paid invoices</div></div>
+        <div class="stat-card"><div class="stat-lbl">Outstanding</div><div class="stat-val y" id="st-out">$0</div><div class="stat-sub">Unpaid</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;" class="dashboard-cols">
+        <div>
+          <div class="sec-hdr"><div class="sec-title">Today — <span id="today-lbl"></span></div><button class="btn btn-primary btn-sm" onclick="openJobModal()">+ Add Job</button></div>
+          <div id="today-cards"><div class="empty-state"><div class="es-ico">📋</div>No jobs today.</div></div>
+        </div>
+        <div>
+          <div class="sec-hdr"><div class="sec-title">Next <span>7 Days</span></div></div>
+          <div id="upcoming-list"><div class="empty-state"><div class="es-ico">📆</div>Nothing upcoming.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TODAY'S ROUTE ═══ -->
+    <div id="view-route" class="view">
+      <div class="sec-hdr">
+        <div class="sec-title">Today's Route — <span id="route-date"></span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="openAllInMaps()">Open All in Maps</button>
+          <button class="btn btn-primary btn-sm" onclick="openJobModal()">+ Add Stop</button>
+        </div>
+      </div>
+      <div id="route-stops"><div class="empty-state"><div class="es-ico">🗺</div>No stops today.</div></div>
+    </div>
+
+    <!-- ═══ SCHEDULE ═══ -->
+    <div id="view-schedule" class="view">
+      <div class="cal-hdr">
+        <button class="cal-nav" onclick="changeMonth(-1)">◀</button>
+        <div class="cal-month" id="cal-label"></div>
+        <button class="cal-nav" onclick="changeMonth(1)">▶</button>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="openJobModal()">+ New Visit</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-dnames">
+          <div class="cal-dname">Sun</div><div class="cal-dname">Mon</div><div class="cal-dname">Tue</div>
+          <div class="cal-dname">Wed</div><div class="cal-dname">Thu</div><div class="cal-dname">Fri</div><div class="cal-dname">Sat</div>
+        </div>
+        <div class="cal-cells" id="cal-cells"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CLIENTS ═══ -->
+    <div id="view-clients" class="view">
+      <div class="sec-hdr"><div class="sec-title">All Clients</div><button class="btn btn-primary btn-sm" onclick="openClientModal()">+ Add Client</button></div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:auto;">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Address</th><th>Phone / Email</th><th>Services</th><th>Next Visit</th><th>Balance</th><th>Actions</th></tr></thead>
+          <tbody id="clients-tbody"><tr><td colspan="7" class="empty-state">No clients yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ INVOICES ═══ -->
+    <div id="view-invoices" class="view">
+      <div class="sec-hdr"><div class="sec-title">Invoices</div><button class="btn btn-primary btn-sm" onclick="openInvoiceSelectModal()">+ Create Invoice</button></div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:auto;">
+        <table class="data-table">
+          <thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="inv-tbody"><tr><td colspan="6" class="empty-state">No invoices yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ GOOGLE SHEETS SYNC ═══ -->
+    <div id="view-sync" class="view">
+      <div class="sec-hdr"><div class="sec-title">Google Sheets Sync</div></div>
+      <div class="sync-card">
+...
