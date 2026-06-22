@@ -1,3 +1,23 @@
+ None selected
+
+Skip to content
+Using Gmail with screen readers
+Conversations
+Html
+Inbox
+Clark, Lisa <lisa.clark@cgm.com>
+Attachments
+8:56 PM (0 minutes ago)
+This message has been digitally signed by the sender.
+to me
+
+
+
+Thank you! 
+
+Lisa C
+ One attachment
+  •  Scanned by Gmail
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -430,7 +450,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
 <!-- ════════════ ADD CLIENT MODAL ════════════ -->
 <div class="modal-overlay" id="modal-client">
   <div class="modal">
-    <div class="modal-hdr"><div class="modal-title">Add New Client</div><button class="modal-x" onclick="closeModal('modal-client')">✕</button></div>
+    <div class="modal-hdr"><div class="modal-title" id="client-modal-title">Add New Client</div><button class="modal-x" onclick="closeModal('modal-client')">✕</button></div>
     <div class="modal-body">
       <div class="frow">
         <div class="fg"><label class="flbl">First Name *</label><input class="fi" id="c-first" placeholder="Jane"></div>
@@ -480,7 +500,7 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     </div>
     <div class="modal-ftr">
       <button class="btn btn-outline" onclick="closeModal('modal-client')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveClient()">Save & Auto-Schedule</button>
+      <button class="btn btn-primary" id="client-save-btn" onclick="saveClient()">Save & Auto-Schedule</button>
     </div>
   </div>
 </div>
@@ -788,65 +808,134 @@ function openAllInMaps() {
 // ══════════════════════════════════════════
 //  CLIENTS
 // ══════════════════════════════════════════
-function openClientModal() {
-  ['c-first','c-last','c-addr','c-phone','c-email','c-rate','c-notes'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('c-city').value = 'Iowa City';
-  document.getElementById('c-zip').value = '';
-  document.getElementById('c-start').value = todayStr();
-  document.getElementById('c-mows').value = '3';
-  document.querySelectorAll('#c-svc-grid input').forEach(cb=>cb.checked=false);
+let editingClientId = null;
+
+function openClientModal(clientId=null) {
+  editingClientId = clientId;
+  if (clientId) {
+    // EDIT MODE — pre-fill all fields
+    const c = clients.find(cl=>cl.id===clientId);
+    if (!c) return;
+    document.getElementById('client-modal-title').textContent = 'Edit Client';
+    document.getElementById('client-save-btn').textContent = 'Save Changes';
+    document.getElementById('c-first').value  = c.first||'';
+    document.getElementById('c-last').value   = c.last||'';
+    document.getElementById('c-addr').value   = c.address||'';
+    document.getElementById('c-city').value   = c.city||'Iowa City';
+    document.getElementById('c-zip').value    = c.zip||'';
+    document.getElementById('c-phone').value  = c.phone||'';
+    document.getElementById('c-email').value  = c.email||'';
+    document.getElementById('c-rate').value   = c.rate||'';
+    document.getElementById('c-notes').value  = c.notes||'';
+    document.getElementById('c-start').value  = c.start||todayStr();
+    document.getElementById('c-mows').value   = String(c.mows||3);
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>{
+      cb.checked = (c.services||[]).includes(cb.value);
+    });
+  } else {
+    // ADD MODE — clear all fields
+    document.getElementById('client-modal-title').textContent = 'Add New Client';
+    document.getElementById('client-save-btn').textContent = 'Save & Auto-Schedule';
+    ['c-first','c-last','c-addr','c-phone','c-email','c-rate','c-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('c-city').value  = 'Iowa City';
+    document.getElementById('c-zip').value   = '';
+    document.getElementById('c-start').value = todayStr();
+    document.getElementById('c-mows').value  = '3';
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>cb.checked=false);
+  }
   openModal('modal-client');
 }
 
 function saveClient() {
   const first = document.getElementById('c-first').value.trim();
   const last  = document.getElementById('c-last').value.trim();
-  if (!first||!last) { toast('First and last name required.','red'); return; }
-  const svcs = [...document.querySelectorAll('#c-svc-grid input:checked')].map(cb=>cb.value);
-  const mows = parseInt(document.getElementById('c-mows').value);
+  if (!first) { toast('First name is required.','red'); return; }
+  const svcs  = [...document.querySelectorAll('#c-svc-grid input:checked')].map(cb=>cb.value);
+  const mows  = parseInt(document.getElementById('c-mows').value);
   const start = document.getElementById('c-start').value || todayStr();
-  const c = {
-    id:uid(), first, last, name:`${first} ${last}`,
-    address: document.getElementById('c-addr').value.trim(),
-    city:    document.getElementById('c-city').value.trim(),
-    zip:     document.getElementById('c-zip').value.trim(),
-    phone:   document.getElementById('c-phone').value.trim(),
-    email:   document.getElementById('c-email').value.trim(),
-    rate:    document.getElementById('c-rate').value,
-    notes:   document.getElementById('c-notes').value.trim(),
-    mows, start, services:svcs, active:true
-  };
-  clients.push(c);
-  const dates = autoSchedule(start, mows);
-  dates.forEach(d => jobs.push({
-    id:uid(), clientId:c.id, clientName:c.name, address:c.address,
-    date:d, tasks:svcs.length?svcs:['Mow'], doneTasks:[], completed:false,
-    notes:'', photos:[], amount:c.rate||0, invoiced:false
-  }));
-  save();
-  closeModal('modal-client');
-  renderDashboard();
-  renderClients();
-  toast(`${c.name} added — ${dates.length} visit${dates.length!==1?'s':''} auto-scheduled.`);
+
+  if (editingClientId) {
+    // UPDATE existing client
+    const idx = clients.findIndex(cl=>cl.id===editingClientId);
+    if (idx === -1) return;
+    const name = last ? `${first} ${last}` : first;
+    clients[idx] = {
+      ...clients[idx],
+      first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs
+    };
+    // Update client name on existing jobs too
+    jobs.forEach(j=>{ if(j.clientId===editingClientId) { j.clientName=name; j.address=clients[idx].address; } });
+    save();
+    closeModal('modal-client');
+    renderClients();
+    renderDashboard();
+    toast(`${name} updated.`);
+  } else {
+    // ADD new client
+    const name = last ? `${first} ${last}` : first;
+    const c = {
+      id:uid(), first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs, active:true
+    };
+    clients.push(c);
+    const dates = autoSchedule(start, mows);
+    dates.forEach(d => jobs.push({
+      id:uid(), clientId:c.id, clientName:c.name, address:c.address,
+      date:d, tasks:svcs.length?svcs:['Mow'], doneTasks:[], completed:false,
+      notes:'', photos:[], amount:c.rate||0, invoiced:false
+    }));
+    save();
+    closeModal('modal-client');
+    renderDashboard();
+    renderClients();
+    toast(`${c.name} added — ${dates.length} visit${dates.length!==1?'s':''} auto-scheduled.`);
+  }
 }
 
 function renderClients() {
   const tbody = document.getElementById('clients-tbody');
   if (!clients.length) { tbody.innerHTML='<tr><td colspan="7" class="empty-state">No clients yet.</td></tr>'; return; }
   const t = todayStr();
-  tbody.innerHTML = clients.map(c=>{
+  // Sort alphabetically by name
+  const sorted = [...clients].sort((a,b)=>a.name.localeCompare(b.name));
+  tbody.innerHTML = sorted.map(c=>{
     const next = jobs.filter(j=>j.clientId===c.id && j.date>=t && !j.completed).sort((a,b)=>a.date.localeCompare(b.date))[0];
     const owed = invoices.filter(i=>i.clientId===c.id&&!i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
     return `<tr>
-      <td><strong>${c.name}</strong>${c.notes?`<br><span style="font-size:11px;color:var(--yellow);">⚠ ${c.notes.substring(0,50)}</span>`:''}</td>
-      <td>${c.address||'—'}<br><span style="font-size:11px;color:var(--gray);">${c.city} ${c.zip}</span></td>
-      <td>${c.phone||'—'}<br><span style="font-size:11px;color:var(--gray);">${c.email||''}</span></td>
-      <td style="max-width:140px;">${(c.services||[]).map(s=>`<span class="badge b-gray" style="margin:1px;font-size:10px;">${s}</span>`).join('')}</td>
+      <td>
+        <strong style="cursor:pointer;color:var(--white);" onclick="openClientModal('${c.id}')">${c.name}</strong>
+        ${c.notes?`<br><span style="font-size:11px;color:var(--yellow);">⚠ ${c.notes.substring(0,50)}</span>`:''}
+      </td>
+      <td>
+        ${c.address||'<span style="color:var(--gray);">—</span>'}
+        <br><span style="font-size:11px;color:var(--gray);">${c.city||''} ${c.zip||''}</span>
+      </td>
+      <td>
+        <span style="color:var(--orange);">${c.phone||'<span style="color:var(--gray);">—</span>'}</span>
+        <br><span style="font-size:11px;color:var(--gray);">${c.email||''}</span>
+      </td>
+      <td style="max-width:140px;">${(c.services||[]).map(s=>`<span class="badge b-gray" style="margin:1px;font-size:10px;">${s}</span>`).join('') || '<span style="color:var(--gray);font-size:12px;">None set</span>'}</td>
       <td>${next?fmtDate(next.date):'<span style="color:var(--gray);">—</span>'}</td>
       <td>${owed>0?`<span style="color:var(--red);font-weight:700;">$${owed.toFixed(2)}</span>`:`<span style="color:var(--green);">$0.00</span>`}</td>
-      <td style="white-space:nowrap;">
+      <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-xs" onclick="openClientModal('${c.id}')">✏ Edit</button>
         <button class="btn btn-outline btn-xs" onclick="quickInvoice(null,'${c.id}')">Invoice</button>
-        <button class="btn btn-outline btn-xs" onclick="deleteClient('${c.id}')">✕</button>
+        <button class="btn btn-red btn-xs" onclick="deleteClient('${c.id}')">✕</button>
       </td>
     </tr>`;
   }).join('');
@@ -1267,5 +1356,21 @@ function init() {
 }
 init();
 </script>
+
+<script>
+// Pre-load contacts from PDF import
+(function() {
+  const existing = JSON.parse(localStorage.getItem('coj_clients') || '[]');
+  const imported = [{"id": "hzmeeinjop", "first": "Jay", "last": "Moon", "name": "Jay Moon", "address": "3724 Lower West Branch Rd", "city": "Iowa City", "zip": "52245", "phone": "253-209-3882", "email": "jaymoon012@outlook.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "7mqd2f37d0", "first": "Diego", "last": "Strebb", "name": "Diego Strebb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-541-3759", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "n8fodt88vw", "first": "Uriel", "last": "", "name": "Uriel", "address": "", "city": "Iowa City", "zip": "", "phone": "319-331-6726", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "2c5841tgxc", "first": "Robert", "last": "Morey", "name": "Robert Morey", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "robtmorey@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ewfoqujbm8", "first": "Susan", "last": "Quinn", "name": "Susan Quinn", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "suz@mchsi.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "q84xt2c67k", "first": "Move Sunday", "last": "Genie", "name": "Move Sunday Genie", "address": "", "city": "Iowa City", "zip": "", "phone": "319-512-1793", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "4gl0bpd04v", "first": "D", "last": "Fraise", "name": "D Fraise", "address": "215 E Washington St", "city": "Washington", "zip": "52353", "phone": "319-653-2256", "email": "dfraise@washingtoniowa.gov", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "28apewb2hp", "first": "Girish", "last": "", "name": "Girish", "address": "929 Tipperary Rd", "city": "Iowa City", "zip": "52246", "phone": "319-594-9320", "email": "ghmhatre@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "pk8oxwbo7n", "first": "Josie Vre", "last": "Strodman", "name": "Josie Vre Strodman", "address": "", "city": "Iowa City", "zip": "", "phone": "515-868-3348", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "uml700l1xr", "first": "Timothy", "last": "Leimbach", "name": "Timothy Leimbach", "address": "1515 Ridge Street", "city": "Iowa City", "zip": "", "phone": "", "email": "timothyleimbach907@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "kuruvv75q0", "first": "Ryan", "last": "Scott", "name": "Ryan Scott", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "wixpartnerwixpartner@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "etrxgqthdl", "first": "Barbara", "last": "Bradac", "name": "Barbara Bradac", "address": "627 Larch Lane", "city": "Iowa City", "zip": "", "phone": "319-400-9060", "email": "barbarabradac@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "wsyxyt6gdv", "first": "Wayne", "last": "Wyman", "name": "Wayne Wyman", "address": "72 Gleason Drive", "city": "Iowa City", "zip": "52240", "phone": "919-961-6211", "email": "ww.wyman@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lbh6u4e5ox", "first": "Pascal", "last": "", "name": "Pascal", "address": "1029 Market St", "city": "Iowa City", "zip": "", "phone": "949-502-1049", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ecdc4s00iv", "first": "Larry", "last": "Goemaat", "name": "Larry Goemaat", "address": "123 Penfro", "city": "Iowa City", "zip": "", "phone": "319-555-1212", "email": "roper1951@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "xx4yaupaf0", "first": "Milo", "last": "Streb", "name": "Milo Streb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-325-8867", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rhn613oohl", "first": "Miss O", "last": "", "name": "Miss O", "address": "", "city": "Iowa City", "zip": "", "phone": "319-330-4737", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "g7wgovnj8q", "first": "Paskell", "last": "Jim Hess", "name": "Paskell Jim Hess", "address": "1029 E Market Street", "city": "Iowa City", "zip": "", "phone": "949-502-1049", "email": "j2hess@sbcglobal.net", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "06qw6wxc3r", "first": "Sally", "last": "Stange", "name": "Sally Stange", "address": "751 7th St", "city": "Iowa City", "zip": "", "phone": "319-331-0896", "email": "stangesally@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ss97qqbi5k", "first": "Justin", "last": "Brame", "name": "Justin Brame", "address": "1875 Silver Maple Trail", "city": "Iowa City", "zip": "", "phone": "563-357-8863", "email": "justintbrame@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ln9t5e70i9", "first": "Gail", "last": "Stika", "name": "Gail Stika", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gstika@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "dwjv0alj1g", "first": "Meadowlark", "last": "POIICA", "name": "Meadowlark POIICA", "address": "2601-2661 Lakeside Apartments", "city": "Iowa City", "zip": "", "phone": "734-233-7707", "email": "kadarnathm@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "2ihakh0ecr", "first": "Serinna", "last": "Cfr", "name": "Serinna Cfr", "address": "", "city": "Iowa City", "zip": "", "phone": "515-808-0666", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "n1j75c9jcb", "first": "Pascale", "last": "Hess", "name": "Pascale Hess", "address": "", "city": "Iowa City", "zip": "", "phone": "950-000-0000", "email": "hesspg@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "5v8yc4grwa", "first": "Santhi", "last": "", "name": "Santhi", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "subjectsh@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "6p44nmyvkb", "first": "Max", "last": "Schoonover", "name": "Max Schoonover", "address": "", "city": "Iowa City", "zip": "", "phone": "701-380-2708", "email": "hawkeye0141@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ww21anqfvv", "first": "Lisa", "last": "Morgan", "name": "Lisa Morgan", "address": "3412 Arbor Drive", "city": "Iowa City", "zip": "", "phone": "319-530-7243", "email": "emorgan8904@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "jomhoczy8a", "first": "Israel", "last": "", "name": "Israel", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "israemore332@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "txdpwrdzxu", "first": "Korina", "last": "", "name": "Korina", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "kjsteinbergs@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ekjaclyaw4", "first": "Judy", "last": "Pfohl", "name": "Judy Pfohl", "address": "", "city": "Iowa City", "zip": "", "phone": "319-351-1684", "email": "judypfohl@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "k6fa8e03s2", "first": "Family", "last": "Trucking", "name": "Family Trucking", "address": "", "city": "Iowa City", "zip": "", "phone": "531-395-5656", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "8mv25mkwac", "first": "Freida", "last": "", "name": "Freida", "address": "", "city": "Iowa City", "zip": "", "phone": "678-760-6147", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "stwhpg8uhf", "first": "Brett", "last": "Streb", "name": "Brett Streb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-721-1538", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "mlsbz8rowm", "first": "Mary", "last": "Cross", "name": "Mary Cross", "address": "1728 F Street", "city": "Iowa City", "zip": "", "phone": "", "email": "marythomancross@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "5u2ccj0j9e", "first": "Phillip", "last": "Kilcrease", "name": "Phillip Kilcrease", "address": "", "city": "Iowa City", "zip": "", "phone": "313-000-0000", "email": "phillipkilcrease@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "i4qdmqdmia", "first": "Charlie", "last": "Christie", "name": "Charlie Christie", "address": "", "city": "Iowa City", "zip": "", "phone": "319-530-9818", "email": "tymephotog@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "zzeg86ssqb", "first": "Streb", "last": "Ivan", "name": "Streb Ivan", "address": "", "city": "Iowa City", "zip": "", "phone": "832-382-3015", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ncipxx6wnb", "first": "Susan", "last": "Denneny", "name": "Susan Denneny", "address": "", "city": "Iowa City", "zip": "", "phone": "513-000-0000", "email": "sdenneny39@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rzwxzt9mfr", "first": "Tricia", "last": "Stiles", "name": "Tricia Stiles", "address": "722 Oakland Ave", "city": "Iowa City", "zip": "", "phone": "319-321-1439", "email": "triciastiles57@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lzvtvmuk9f", "first": "Jon", "last": "Fisher", "name": "Jon Fisher", "address": "944 Miller Ave", "city": "Iowa City", "zip": "52246", "phone": "313-330-9938", "email": "jonfisher4520@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "mfmvos1qfn", "first": "Dan", "last": "Gale", "name": "Dan Gale", "address": "", "city": "Iowa City", "zip": "", "phone": "319-573-6326", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "5p9254l1ee", "first": "Jared", "last": "Donze", "name": "Jared Donze", "address": "2107 14th St", "city": "Iowa City", "zip": "", "phone": "319-530-5453", "email": "jgd5150@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "5egubv2lyt", "first": "Becky", "last": "Smith", "name": "Becky Smith", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "rebeccaliedersmith@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "gf0m7p7w5s", "first": "David", "last": "Vahle", "name": "David Vahle", "address": "733 Mormon Trek Blvd", "city": "Iowa City", "zip": "52246", "phone": "319-325-8113", "email": "hello@navigatehomesiowa.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "usj3axvd0m", "first": "Sherry", "last": "Mysak", "name": "Sherry Mysak", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "sjm_52402@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "w6b37n4bkk", "first": "Cristi", "last": "Gleason", "name": "Cristi Gleason", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gleason44@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "mqd4aqewoa", "first": "Dawn", "last": "Pawlowski", "name": "Dawn Pawlowski", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "sdbpast@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "zwwvmp1u5v", "first": "Gayle", "last": "Hughes", "name": "Gayle Hughes", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gaylehughes5@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "evgyl8s77v", "first": "Jeff", "last": "Terpstra", "name": "Jeff Terpstra", "address": "80 Ealing Drive", "city": "Iowa City", "zip": "", "phone": "319-321-7560", "email": "jlterps@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "uxfgrvne2x", "first": "Keith", "last": "Less", "name": "Keith Less", "address": "1699 Oaklake Park Rd", "city": "Iowa City", "zip": "", "phone": "320-000-0000", "email": "krless@mchsi.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "d3r2xs6hp7", "first": "Shelly", "last": "Schneider", "name": "Shelly Schneider", "address": "", "city": "Iowa City", "zip": "", "phone": "913-617-7673", "email": "tadbit07@att.net", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "f324dh8rmv", "first": "Bob", "last": "Wickham", "name": "Bob Wickham", "address": "927 Hudson Ave", "city": "Iowa City", "zip": "", "phone": "319-834-0282", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rdiukg84j2", "first": "Rob", "last": "", "name": "Rob", "address": "1421 Keokuk St", "city": "Iowa City", "zip": "", "phone": "319-621-6505", "email": "rob@ghabel.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lv0m1sk3mi", "first": "Justin", "last": "Brame", "name": "Justin Brame", "address": "1875 Silver Maple Trail", "city": "Iowa City", "zip": "", "phone": "563-357-8863", "email": "justinbrame@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "7cgsdu4jbg", "first": "Joe", "last": "Screen", "name": "Joe Screen", "address": "", "city": "Iowa City", "zip": "", "phone": "563-503-1959", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "isp1dl6qn8", "first": "Elizabeth", "last": "Hecker", "name": "Elizabeth Hecker", "address": "", "city": "Iowa City", "zip": "", "phone": "704-000-0000", "email": "lizhecker@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "bj7aojikzx", "first": "Casey", "last": "Westhoff", "name": "Casey Westhoff", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "caseywesthoff1@msn.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "phdeatqk4z", "first": "Tucker", "last": "Kemp", "name": "Tucker Kemp", "address": "", "city": "Iowa City", "zip": "", "phone": "319-325-3282", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "x51dl4hxf0", "first": "Susan", "last": "Eynon", "name": "Susan Eynon", "address": "", "city": "Iowa City", "zip": "", "phone": "301-537-8298", "email": "seynonlark@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "76c8eowtr4", "first": "Jan", "last": "Barnholdt", "name": "Jan Barnholdt", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "barnholdtj@aol.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ssllcby0mq", "first": "Diana", "last": "Childress", "name": "Diana Childress", "address": "2017 9th Avenue", "city": "Iowa City", "zip": "", "phone": "319-325-4164", "email": "1dichildress@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "8w9w8nx3dr", "first": "Jennifer", "last": "Bedet", "name": "Jennifer Bedet", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "jenbedet@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "mj3z66wns8", "first": "Maria", "last": "C", "name": "Maria C", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "angelgotch@me.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "7tkbes54a0", "first": "Fatima", "last": "", "name": "Fatima", "address": "", "city": "Iowa City", "zip": "", "phone": "319-512-6601", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lzcrmfrg5x", "first": "Robin", "last": "Enfield", "name": "Robin Enfield", "address": "", "city": "Iowa City", "zip": "", "phone": "319-321-1335", "email": "robin-enfield@uiowa.edu", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rhymuscik7", "first": "Donald", "last": "Leedy", "name": "Donald Leedy", "address": "1311 High Street", "city": "Iowa City", "zip": "", "phone": "737-361-9903", "email": "donaldleedy87@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "szx6bkk9fz", "first": "Kizzy", "last": "Davies", "name": "Kizzy Davies", "address": "911 Prairie View Dr", "city": "West Branch", "zip": "52358", "phone": "312-307-3775", "email": "kizzydavies10@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "plulo3u0dp", "first": "Jerry", "last": "Ward", "name": "Jerry Ward", "address": "", "city": "Iowa City", "zip": "", "phone": "515-635-9886", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "zb98z2ti1f", "first": "Jill", "last": "Bly", "name": "Jill Bly", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "jillbly1@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lz46vfhp98", "first": "Twaun", "last": "", "name": "Twaun", "address": "", "city": "Iowa City", "zip": "", "phone": "563-296-1083", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "fikswmxu3i", "first": "Jordan", "last": "Spahr", "name": "Jordan Spahr", "address": "", "city": "Iowa City", "zip": "", "phone": "319-423-4139", "email": "kwcric@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "bln8rzr3b1", "first": "Fatima", "last": "Nighbor", "name": "Fatima Nighbor", "address": "", "city": "Iowa City", "zip": "", "phone": "563-635-6418", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "dvf8jibqhj", "first": "Management", "last": "Company", "name": "Management Company", "address": "", "city": "Iowa City", "zip": "", "phone": "330-854-5865", "email": "vcook1439@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "qg8cp4stqi", "first": "Lake Shore", "last": "Recycling", "name": "Lake Shore Recycling", "address": "", "city": "Iowa City", "zip": "", "phone": "630-204-4107", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "yzsf1zg99d", "first": "Turf Masters", "last": "Lawn & Landscape", "name": "Turf Masters Lawn & Landscape", "address": "", "city": "Iowa City", "zip": "", "phone": "319-271-3465", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "jtkb6zw2b8", "first": "Fast City", "last": "", "name": "Fast City", "address": "", "city": "Iowa City", "zip": "", "phone": "319-430-8567", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "6sogulz9di", "first": "House Guy", "last": "", "name": "House Guy", "address": "", "city": "Iowa City", "zip": "", "phone": "847-376-2484", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}];
+  // Merge - avoid duplicates by phone or name
+  const existingKeys = new Set(existing.map(c => c.name.toLowerCase().trim()));
+  const newContacts = imported.filter(c => !existingKeys.has(c.name.toLowerCase().trim()));
+  const merged = [...existing, ...newContacts];
+  localStorage.setItem('coj_clients', JSON.stringify(merged));
+  console.log('Imported ' + newContacts.length + ' contacts. Total: ' + merged.length);
+})();
+</script>
 </body>
 </html>
+index-7.html
+Displaying index-7.html.
