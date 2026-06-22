@@ -387,4 +387,954 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     <div id="view-sync" class="view">
       <div class="sec-hdr"><div class="sec-title">Google Sheets Sync</div></div>
       <div class="sync-card">
-...
+        <div class="fg">
+          <label class="flbl">Apps Script Web App URL</label>
+          <input class="fi" id="sheets-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn btn-primary" onclick="saveSheetURL()">Save URL</button>
+          <button class="btn btn-outline" onclick="testSync()">Test Connection</button>
+          <button class="btn btn-outline" onclick="syncAllNow()">Sync All Now</button>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Setup Steps</div>
+        <div class="sync-step"><div class="sync-step-num">1</div><div class="sync-step-text">Open <strong>Google Sheets</strong> → create a new blank sheet</div></div>
+        <div class="sync-step"><div class="sync-step-num">2</div><div class="sync-step-text">Click <strong>Extensions → Apps Script</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">3</div><div class="sync-step-text">Download and paste the script code below</div></div>
+        <div class="sync-step"><div class="sync-step-num">4</div><div class="sync-step-text">Click <strong>Deploy → New Deployment → Web App</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">5</div><div class="sync-step-text">Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong> → Deploy</div></div>
+        <div class="sync-step"><div class="sync-step-num">6</div><div class="sync-step-text">Copy the Web App URL and paste it above → Save</div></div>
+        <button class="btn btn-outline" style="margin-top:8px;" onclick="downloadAppsScript()">⬇ Download Apps Script (.gs)</button>
+      </div>
+    </div>
+
+    <!-- ═══ GITHUB HOSTING ═══ -->
+    <div id="view-github" class="view">
+      <div class="sec-hdr"><div class="sec-title">GitHub Pages Hosting</div></div>
+      <div class="sync-card">
+        <div style="font-size:13px;color:var(--gray-light);margin-bottom:18px;line-height:1.7;">Host this dashboard on GitHub Pages so you can access it from any phone, tablet, or computer — no app store needed. Add it to your phone home screen for a full app experience.</div>
+        <div class="sync-step"><div class="sync-step-num">1</div><div class="sync-step-text">Go to <strong>github.com</strong> → sign in or create a free account</div></div>
+        <div class="sync-step"><div class="sync-step-num">2</div><div class="sync-step-text">Click <strong>New Repository</strong> → name it <strong>clarks-odd-jobs</strong> → set Public → Create</div></div>
+        <div class="sync-step"><div class="sync-step-num">3</div><div class="sync-step-text">Click <strong>Add file → Upload files</strong> → upload this <strong>index.html</strong> file</div></div>
+        <div class="sync-step"><div class="sync-step-num">4</div><div class="sync-step-text">Go to <strong>Settings → Pages</strong> → Source: <strong>Deploy from branch → main → / (root)</strong> → Save</div></div>
+        <div class="sync-step"><div class="sync-step-num">5</div><div class="sync-step-text">Your dashboard will be live at <strong>yourusername.github.io/clarks-odd-jobs</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">6</div><div class="sync-step-text">On your iPhone/iPad: open Safari → navigate to the URL → tap <strong>Share → Add to Home Screen</strong></div></div>
+        <div class="divider"></div>
+        <div style="font-size:13px;color:var(--gray-light);line-height:1.7;"><strong style="color:var(--white);">Note:</strong> Data is saved locally on each device. Connect Google Sheets sync to share data across devices.</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ════════════ ADD CLIENT MODAL ════════════ -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="client-modal-title">Add New Client</div><button class="modal-x" onclick="closeModal('modal-client')">✕</button></div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="flbl">First Name *</label><input class="fi" id="c-first" placeholder="Jane"></div>
+        <div class="fg"><label class="flbl">Last Name *</label><input class="fi" id="c-last" placeholder="Smith"></div>
+      </div>
+      <div class="fg"><label class="flbl">Street Address *</label><input class="fi" id="c-addr" placeholder="1234 Elm Street"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">City</label><input class="fi" id="c-city" value="Iowa City"></div>
+        <div class="fg"><label class="flbl">State / ZIP</label><input class="fi" id="c-zip" placeholder="IA 52240"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Phone</label><input class="fi" id="c-phone" placeholder="(319) 555-0100" type="tel"></div>
+        <div class="fg"><label class="flbl">Email</label><input class="fi" id="c-email" placeholder="jane@email.com" type="email"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Service Start Date</label><input class="fi" id="c-start" type="date"></div>
+        <div class="fg"><label class="flbl">Visits Per Month</label>
+          <select class="fsel" id="c-mows">
+            <option value="3">3x / month</option>
+            <option value="4">4x / month (weekly)</option>
+            <option value="2">2x / month (bi-weekly)</option>
+            <option value="1">1x / month</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Monthly Rate ($)</label><input class="fi" id="c-rate" placeholder="150.00" type="number" step="0.01"></div>
+      <div class="fg">
+        <label class="flbl">Default Services</label>
+        <div class="task-grid" id="c-svc-grid">
+          <div class="tci"><input type="checkbox" id="cs-mow" value="Mow"><label for="cs-mow">Mowing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-weed" value="Weed Eat"><label for="cs-weed">Weed Eating</label></div>
+          <div class="tci"><input type="checkbox" id="cs-edge" value="Edge"><label for="cs-edge">Edging</label></div>
+          <div class="tci"><input type="checkbox" id="cs-blow" value="Blow"><label for="cs-blow">Blowing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-gutter" value="Gutters"><label for="cs-gutter">Gutter Cleaning</label></div>
+          <div class="tci"><input type="checkbox" id="cs-landscape" value="Landscape"><label for="cs-landscape">Landscaping</label></div>
+          <div class="tci"><input type="checkbox" id="cs-mulch" value="Mulch"><label for="cs-mulch">Mulching</label></div>
+          <div class="tci"><input type="checkbox" id="cs-trim" value="Hedge Trim"><label for="cs-trim">Hedge Trim</label></div>
+          <div class="tci"><input type="checkbox" id="cs-fence" value="Fence Repair"><label for="cs-fence">Fence Repair</label></div>
+          <div class="tci"><input type="checkbox" id="cs-deck" value="Deck Stain"><label for="cs-deck">Deck Staining</label></div>
+          <div class="tci"><input type="checkbox" id="cs-power" value="Power Wash"><label for="cs-power">Power Washing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-cleanup" value="Cleanup"><label for="cs-cleanup">Yard Cleanup</label></div>
+          <div class="tci"><input type="checkbox" id="cs-aerate" value="Aerate"><label for="cs-aerate">Aeration</label></div>
+          <div class="tci"><input type="checkbox" id="cs-fert" value="Fertilize"><label for="cs-fert">Fertilizing</label></div>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Notes / Gate Code / Special Instructions</label><textarea class="fta" id="c-notes" placeholder="Gate code 1234, dog in backyard, park on street..."></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-primary" id="client-save-btn" onclick="saveClient()">Save & Auto-Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ ADD JOB MODAL ════════════ -->
+<div class="modal-overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="job-modal-title">Add Job</div><button class="modal-x" onclick="closeModal('modal-job')">✕</button></div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="flbl">Client *</label>
+          <select class="fsel" id="j-client" onchange="onJobClientChange()">
+            <option value="">Select client...</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Date *</label><input class="fi" id="j-date" type="date"></div>
+      </div>
+      <div class="fg" id="j-addr-block" style="display:none;">
+        <label class="flbl">Address</label>
+        <div style="background:var(--surface);padding:9px 12px;border-radius:7px;font-size:13px;color:var(--gray-light);" id="j-addr-val"></div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Tasks for This Visit</label>
+        <div class="task-grid" id="j-task-grid">
+          <div class="tci"><input type="checkbox" id="jt-mow" value="Mow"><label for="jt-mow">Mowing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-weed" value="Weed Eat"><label for="jt-weed">Weed Eating</label></div>
+          <div class="tci"><input type="checkbox" id="jt-edge" value="Edge"><label for="jt-edge">Edging</label></div>
+          <div class="tci"><input type="checkbox" id="jt-blow" value="Blow"><label for="jt-blow">Blowing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-gutter" value="Gutters"><label for="jt-gutter">Gutter Cleaning</label></div>
+          <div class="tci"><input type="checkbox" id="jt-landscape" value="Landscape"><label for="jt-landscape">Landscaping</label></div>
+          <div class="tci"><input type="checkbox" id="jt-mulch" value="Mulch"><label for="jt-mulch">Mulching</label></div>
+          <div class="tci"><input type="checkbox" id="jt-trim" value="Hedge Trim"><label for="jt-trim">Hedge Trim</label></div>
+          <div class="tci"><input type="checkbox" id="jt-fence" value="Fence Repair"><label for="jt-fence">Fence Repair</label></div>
+          <div class="tci"><input type="checkbox" id="jt-deck" value="Deck Stain"><label for="jt-deck">Deck Staining</label></div>
+          <div class="tci"><input type="checkbox" id="jt-power" value="Power Wash"><label for="jt-power">Power Washing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-cleanup" value="Cleanup"><label for="jt-cleanup">Yard Cleanup</label></div>
+          <div class="tci"><input type="checkbox" id="jt-aerate" value="Aerate"><label for="jt-aerate">Aeration</label></div>
+          <div class="tci"><input type="checkbox" id="jt-fert" value="Fertilize"><label for="jt-fert">Fertilizing</label></div>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Job Amount ($)</label><input class="fi" id="j-amount" placeholder="75.00" type="number" step="0.01"></div>
+      <div class="fg"><label class="flbl">Work Notes / Details</label><textarea class="fta" id="j-notes" placeholder="What was done, conditions found, issues to flag..."></textarea></div>
+      <div class="fg">
+        <label class="flbl">Photos</label>
+        <div class="photo-drop" onclick="document.getElementById('j-photo-input').click()">
+          <div style="font-size:30px;margin-bottom:6px;">📷</div>
+          <div style="font-size:13px;color:var(--gray-light);">Tap to add from camera or gallery</div>
+        </div>
+        <input type="file" id="j-photo-input" multiple accept="image/*" capture="environment" style="display:none;" onchange="handlePhotos(this)">
+        <div class="photo-grid" id="j-photo-grid"></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJob()">Save Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ JOB DETAIL MODAL ════════════ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="det-title">Job Detail</div><button class="modal-x" onclick="closeModal('modal-detail')">✕</button></div>
+    <div class="modal-body" id="det-body"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-detail')">Close</button>
+      <button class="btn btn-outline btn-sm" id="det-inv-btn">Generate Invoice</button>
+      <button class="btn btn-primary btn-sm" id="det-done-btn">Mark Complete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ INVOICE SELECT MODAL ════════════ -->
+<div class="modal-overlay" id="modal-inv-select">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Create Invoice</div><button class="modal-x" onclick="closeModal('modal-inv-select')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="flbl">Select Client</label>
+        <select class="fsel" id="inv-client-sel">
+          <option value="">Choose client...</option>
+        </select>
+      </div>
+      <div class="fg" id="inv-job-sel-wrap" style="display:none;">
+        <label class="flbl">Select Jobs to Include</label>
+        <div id="inv-job-list"></div>
+      </div>
+      <div class="fg"><label class="flbl">Custom Note (optional)</label><textarea class="fta" id="inv-note" placeholder="Thank you for your business!"></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-inv-select')">Cancel</button>
+      <button class="btn btn-primary" onclick="generateInvoiceFromSelect()">Preview Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ INVOICE VIEW MODAL ════════════ -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal modal-lg">
+    <div class="modal-hdr"><div class="modal-title">Invoice Preview</div><button class="modal-x" onclick="closeModal('modal-invoice')">✕</button></div>
+    <div class="modal-body"><div class="inv-box" id="inv-content"></div></div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Close</button>
+      <button class="btn btn-outline" onclick="copyInvoice()">📋 Copy Invoice</button>
+      <button class="btn btn-green" onclick="markCurrentPaid()">✓ Mark Paid</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let clients  = JSON.parse(localStorage.getItem('coj_clients')  || '[]');
+let jobs     = JSON.parse(localStorage.getItem('coj_jobs')     || '[]');
+let invoices = JSON.parse(localStorage.getItem('coj_invoices') || '[]');
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+let editJobId = null;
+let jobPhotos = [];
+let currentInvId = null;
+
+const BIZ = {
+  name:    "Clark's Odd Jobs LLC",
+  tagline: "Veteran-Owned Home Services",
+  phone:   "(319) 325-9383",
+  email:   "clarksoddjobsllc@gmail.com",
+  web:     "www.clarks-odd-jobs.com",
+  city:    "Iowa City, Iowa",
+  payment: ["PayPal","CashApp","Venmo","Check","Cash","Tap to Pay"]
+};
+
+// ── PERSIST ──
+function save() {
+  localStorage.setItem('coj_clients',  JSON.stringify(clients));
+  localStorage.setItem('coj_jobs',     JSON.stringify(jobs));
+  localStorage.setItem('coj_invoices', JSON.stringify(invoices));
+  pushToSheets();
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,6); }
+
+// ══════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const titles = {dashboard:'Dashboard',route:"Today's Route",schedule:'Schedule',clients:'All Clients',invoices:'Invoices',sync:'Google Sheets Sync',github:'GitHub Pages Hosting'};
+  document.getElementById('tb-title').textContent = titles[name]||name;
+  closeMobileMenu();
+  if (name==='dashboard') renderDashboard();
+  if (name==='route')     renderRoute();
+  if (name==='schedule')  renderCalendar();
+  if (name==='clients')   renderClients();
+  if (name==='invoices')  renderInvoices();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+function openMobileMenu()  { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('mob-overlay').classList.add('show'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('mob-overlay').classList.remove('show'); }
+
+// ══════════════════════════════════════════
+//  DATE HELPERS
+// ══════════════════════════════════════════
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
+function addDays(s,n) { const d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function monthName(m) { return ['January','February','March','April','May','June','July','August','September','October','November','December'][m]; }
+
+function autoSchedule(startDate, mowsPerMonth) {
+  const d = new Date(startDate+'T12:00:00');
+  const y = d.getFullYear(), mo = d.getMonth();
+  const dim = new Date(y, mo+1, 0).getDate();
+  const interval = Math.floor(dim / mowsPerMonth);
+  const dates = [];
+  let day = d.getDate();
+  for (let i=0; i<mowsPerMonth; i++) {
+    dates.push(new Date(y,mo,day).toISOString().split('T')[0]);
+    day += interval;
+    if (day > dim) day = dim;
+  }
+  return dates;
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard() {
+  const t = todayStr();
+  const d = new Date(t+'T12:00:00');
+  const lbl = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('today-lbl').textContent = lbl;
+
+  document.getElementById('st-clients').textContent = clients.length;
+  const nm = new Date().getMonth(), ny = new Date().getFullYear();
+  const mJobs = jobs.filter(j=>{ const jd=new Date(j.date+'T12:00:00'); return jd.getMonth()===nm && jd.getFullYear()===ny; });
+  document.getElementById('st-jobs').textContent = mJobs.length;
+
+  const paid = invoices.filter(i=>i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+  const owed = invoices.filter(i=>!i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+  document.getElementById('st-rev').textContent = '$'+paid.toFixed(2);
+  document.getElementById('st-out').textContent = '$'+owed.toFixed(2);
+
+  // badge
+  const next7 = jobs.filter(j=>j.date>=t && j.date<=addDays(t,7) && !j.completed);
+  document.getElementById('route-badge').textContent = getTodayJobs().length;
+
+  renderTodayCards();
+  renderUpcoming();
+}
+
+function getTodayJobs() { return jobs.filter(j=>j.date===todayStr()).sort((a,b)=>a.clientName.localeCompare(b.clientName)); }
+
+function renderTodayCards() {
+  const tj = getTodayJobs();
+  const el = document.getElementById('today-cards');
+  el.innerHTML = tj.length ? tj.map(j=>jobCardHTML(j)).join('') : '<div class="empty-state"><div class="es-ico">📋</div>No jobs scheduled today.</div>';
+}
+
+function jobCardHTML(j) {
+  const c = clients.find(cl=>cl.id===j.clientId)||{};
+  const taskChips = (j.tasks||[]).map(t=>`<span class="task-chip ${(j.doneTasks||[]).includes(t)?'tc-done':'tc-pending'}" onclick="toggleTask('${j.id}','${t}')">${t}</span>`).join('');
+  const photos = j.photos&&j.photos.length ? `<div style="display:flex;gap:4px;margin-top:8px;">${j.photos.slice(0,4).map(p=>`<img src="${p}" style="width:44px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--border);">`).join('')}</div>` : '';
+  return `<div class="job-card ${j.completed?'done':''}" id="jcard-${j.id}">
+    <div class="jc-check ${j.completed?'on':''}" onclick="toggleComplete('${j.id}')">✓</div>
+    <div class="jc-info">
+      <div class="jc-client">${j.clientName}</div>
+      <div class="jc-addr">📍 ${c.address||j.address||'—'}</div>
+      <div class="jc-tasks">${taskChips}</div>
+      ${j.notes?`<div style="font-size:11px;color:var(--gray);margin-top:6px;">📝 ${j.notes}</div>`:''}
+      ${photos}
+    </div>
+    <div class="jc-actions">
+      <div class="jc-date">${fmtDate(j.date)}</div>
+      <div class="jc-phone">${c.phone||''}</div>
+      <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">Detail</button>
+      <button class="btn btn-outline btn-xs" onclick="quickInvoice('${j.id}')">Invoice</button>
+    </div>
+  </div>`;
+}
+
+function renderUpcoming() {
+  const t = todayStr();
+  const end = addDays(t,7);
+  const items = jobs.filter(j=>j.date>t && j.date<=end && !j.completed).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10);
+  const el = document.getElementById('upcoming-list');
+  if (!items.length) { el.innerHTML='<div class="empty-state"><div class="es-ico">📆</div>Clear for the next 7 days.</div>'; return; }
+  el.innerHTML = items.map(j=>{
+    const d=new Date(j.date+'T12:00:00');
+    const c=clients.find(cl=>cl.id===j.clientId)||{};
+    return `<div class="up-item">
+      <div class="up-datebox"><div class="up-day">${d.getDate()}</div><div class="up-mon">${d.toLocaleString('en-US',{month:'short'})}</div></div>
+      <div class="up-info"><div class="up-client">${j.clientName}</div><div class="up-detail">📍 ${c.address||''} · ${(j.tasks||[]).join(', ')}</div></div>
+      <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">▶</button>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  TODAY'S ROUTE
+// ══════════════════════════════════════════
+function renderRoute() {
+  const t = todayStr();
+  const d = new Date(t+'T12:00:00');
+  document.getElementById('route-date').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const tj = getTodayJobs();
+  const el = document.getElementById('route-stops');
+  if (!tj.length) { el.innerHTML='<div class="empty-state"><div class="es-ico">🗺</div>No stops scheduled today. Add a job to get started.</div>'; return; }
+  el.innerHTML = tj.map((j,i)=>{
+    const c = clients.find(cl=>cl.id===j.clientId)||{};
+    const fullAddr = encodeURIComponent(`${c.address||j.address}, ${c.city||''} ${c.zip||''}`);
+    const mapsUrl = `https://maps.apple.com/?daddr=${fullAddr}`;
+    const taskChips = (j.tasks||[]).map(t=>`<span class="task-chip ${(j.doneTasks||[]).includes(t)?'tc-done':'tc-pending'}" onclick="toggleTask('${j.id}','${t}');renderRoute();">${t}</span>`).join('');
+    return `<div class="route-stop ${j.completed?'done':''}">
+      <div class="route-num">${i+1}</div>
+      <div class="route-info">
+        <div class="route-client">${j.clientName} ${j.completed?'<span style="font-size:11px;color:var(--green);font-weight:700;">✓ Done</span>':''}</div>
+        <div class="route-addr">📍 ${c.address||''}, ${c.city||''} ${c.zip||''}</div>
+        <div style="font-size:12px;color:var(--orange);margin-top:2px;">📞 ${c.phone||'—'}</div>
+        ${c.notes?`<div style="font-size:11px;color:var(--yellow);margin-top:4px;">⚠ ${c.notes}</div>`:''}
+        <div class="route-tasks">${taskChips}</div>
+        ${j.notes?`<div style="font-size:11px;color:var(--gray);margin-top:6px;">📝 ${j.notes}</div>`:''}
+      </div>
+      <div class="route-actions">
+        <a class="maps-btn" href="${mapsUrl}" target="_blank">📍 Directions</a>
+        <button class="btn btn-outline btn-xs" onclick="toggleComplete('${j.id}');renderRoute();">${j.completed?'Reopen':'✓ Done'}</button>
+        <button class="btn btn-outline btn-xs" onclick="quickInvoice('${j.id}')">Invoice</button>
+        <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">Photos/Notes</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAllInMaps() {
+  const tj = getTodayJobs();
+  if (!tj.length) return;
+  const addrs = tj.map(j=>{ const c=clients.find(cl=>cl.id===j.clientId)||{}; return `${c.address||j.address}, ${c.city||''} ${c.zip||''}`; });
+  // Open first stop — Apple Maps doesn't support multi-stop easily from web
+  window.open(`https://maps.apple.com/?daddr=${encodeURIComponent(addrs[0])}`, '_blank');
+  if (addrs.length > 1) showToast(`Opened stop 1 of ${addrs.length}. Use "Next Stop" in Maps for the rest.`);
+}
+
+// ══════════════════════════════════════════
+//  CLIENTS
+// ══════════════════════════════════════════
+let editingClientId = null;
+
+function openClientModal(clientId=null) {
+  editingClientId = clientId;
+  if (clientId) {
+    // EDIT MODE — pre-fill all fields
+    const c = clients.find(cl=>cl.id===clientId);
+    if (!c) return;
+    document.getElementById('client-modal-title').textContent = 'Edit Client';
+    document.getElementById('client-save-btn').textContent = 'Save Changes';
+    document.getElementById('c-first').value  = c.first||'';
+    document.getElementById('c-last').value   = c.last||'';
+    document.getElementById('c-addr').value   = c.address||'';
+    document.getElementById('c-city').value   = c.city||'Iowa City';
+    document.getElementById('c-zip').value    = c.zip||'';
+    document.getElementById('c-phone').value  = c.phone||'';
+    document.getElementById('c-email').value  = c.email||'';
+    document.getElementById('c-rate').value   = c.rate||'';
+    document.getElementById('c-notes').value  = c.notes||'';
+    document.getElementById('c-start').value  = c.start||todayStr();
+    document.getElementById('c-mows').value   = String(c.mows||3);
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>{
+      cb.checked = (c.services||[]).includes(cb.value);
+    });
+  } else {
+    // ADD MODE — clear all fields
+    document.getElementById('client-modal-title').textContent = 'Add New Client';
+    document.getElementById('client-save-btn').textContent = 'Save & Auto-Schedule';
+    ['c-first','c-last','c-addr','c-phone','c-email','c-rate','c-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('c-city').value  = 'Iowa City';
+    document.getElementById('c-zip').value   = '';
+    document.getElementById('c-start').value = todayStr();
+    document.getElementById('c-mows').value  = '3';
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>cb.checked=false);
+  }
+  openModal('modal-client');
+}
+
+function saveClient() {
+  const first = document.getElementById('c-first').value.trim();
+  const last  = document.getElementById('c-last').value.trim();
+  if (!first) { toast('First name is required.','red'); return; }
+  const svcs  = [...document.querySelectorAll('#c-svc-grid input:checked')].map(cb=>cb.value);
+  const mows  = parseInt(document.getElementById('c-mows').value);
+  const start = document.getElementById('c-start').value || todayStr();
+
+  if (editingClientId) {
+    // UPDATE existing client
+    const idx = clients.findIndex(cl=>cl.id===editingClientId);
+    if (idx === -1) return;
+    const name = last ? `${first} ${last}` : first;
+    clients[idx] = {
+      ...clients[idx],
+      first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs
+    };
+    // Update client name on existing jobs too
+    jobs.forEach(j=>{ if(j.clientId===editingClientId) { j.clientName=name; j.address=clients[idx].address; } });
+    save();
+    closeModal('modal-client');
+    renderClients();
+    renderDashboard();
+    toast(`${name} updated.`);
+  } else {
+    // ADD new client
+    const name = last ? `${first} ${last}` : first;
+    const c = {
+      id:uid(), first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs, active:true
+    };
+    clients.push(c);
+    const dates = autoSchedule(start, mows);
+    dates.forEach(d => jobs.push({
+      id:uid(), clientId:c.id, clientName:c.name, address:c.address,
+      date:d, tasks:svcs.length?svcs:['Mow'], doneTasks:[], completed:false,
+      notes:'', photos:[], amount:c.rate||0, invoiced:false
+    }));
+    save();
+    closeModal('modal-client');
+    renderDashboard();
+    renderClients();
+    toast(`${c.name} added — ${dates.length} visit${dates.length!==1?'s':''} auto-scheduled.`);
+  }
+}
+
+function renderClients() {
+  const tbody = document.getElementById('clients-tbody');
+  if (!clients.length) { tbody.innerHTML='<tr><td colspan="7" class="empty-state">No clients yet.</td></tr>'; return; }
+  const t = todayStr();
+  // Sort alphabetically by name
+  const sorted = [...clients].sort((a,b)=>a.name.localeCompare(b.name));
+  tbody.innerHTML = sorted.map(c=>{
+    const next = jobs.filter(j=>j.clientId===c.id && j.date>=t && !j.completed).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    const owed = invoices.filter(i=>i.clientId===c.id&&!i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+    return `<tr>
+      <td>
+        <strong style="cursor:pointer;color:var(--white);" onclick="openClientModal('${c.id}')">${c.name}</strong>
+        ${c.notes?`<br><span style="font-size:11px;color:var(--yellow);">⚠ ${c.notes.substring(0,50)}</span>`:''}
+      </td>
+      <td>
+        ${c.address||'<span style="color:var(--gray);">—</span>'}
+        <br><span style="font-size:11px;color:var(--gray);">${c.city||''} ${c.zip||''}</span>
+      </td>
+      <td>
+        <span style="color:var(--orange);">${c.phone||'<span style="color:var(--gray);">—</span>'}</span>
+        <br><span style="font-size:11px;color:var(--gray);">${c.email||''}</span>
+      </td>
+      <td style="max-width:140px;">${(c.services||[]).map(s=>`<span class="badge b-gray" style="margin:1px;font-size:10px;">${s}</span>`).join('') || '<span style="color:var(--gray);font-size:12px;">None set</span>'}</td>
+      <td>${next?fmtDate(next.date):'<span style="color:var(--gray);">—</span>'}</td>
+      <td>${owed>0?`<span style="color:var(--red);font-weight:700;">$${owed.toFixed(2)}</span>`:`<span style="color:var(--green);">$0.00</span>`}</td>
+      <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-xs" onclick="openClientModal('${c.id}')">✏ Edit</button>
+        <button class="btn btn-outline btn-xs" onclick="quickInvoice(null,'${c.id}')">Invoice</button>
+        <button class="btn btn-red btn-xs" onclick="deleteClient('${c.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteClient(id) {
+  if (!confirm('Remove this client and all their jobs?')) return;
+  clients = clients.filter(c=>c.id!==id);
+  jobs    = jobs.filter(j=>j.clientId!==id);
+  save(); renderClients(); renderDashboard(); toast('Client removed.');
+}
+
+function searchClients(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#clients-tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');
+}
+
+// ══════════════════════════════════════════
+//  JOBS
+// ══════════════════════════════════════════
+function openJobModal(date=null) {
+  editJobId = null; jobPhotos = [];
+  document.getElementById('job-modal-title').textContent = 'Add Job';
+  document.getElementById('j-client').innerHTML = '<option value="">Select client...</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('j-date').value = date||todayStr();
+  document.getElementById('j-notes').value = '';
+  document.getElementById('j-amount').value = '';
+  document.getElementById('j-addr-block').style.display = 'none';
+  document.getElementById('j-photo-grid').innerHTML = '';
+  document.querySelectorAll('#j-task-grid input').forEach(cb=>cb.checked=false);
+  openModal('modal-job');
+}
+
+function onJobClientChange() {
+  const id = document.getElementById('j-client').value;
+  const c = clients.find(cl=>cl.id===id);
+  if (!c) { document.getElementById('j-addr-block').style.display='none'; return; }
+  document.getElementById('j-addr-val').textContent = `${c.address}, ${c.city} ${c.zip}`;
+  document.getElementById('j-addr-block').style.display = '';
+  document.getElementById('j-amount').value = c.rate||'';
+  document.querySelectorAll('#j-task-grid input').forEach(cb=>cb.checked=false);
+  (c.services||[]).forEach(s=>{ document.querySelectorAll('#j-task-grid input').forEach(cb=>{ if(cb.value===s) cb.checked=true; }); });
+}
+
+function saveJob() {
+  const clientId = document.getElementById('j-client').value;
+  const date     = document.getElementById('j-date').value;
+  if (!clientId||!date) { toast('Select a client and date.','red'); return; }
+  const c = clients.find(cl=>cl.id===clientId)||{};
+  const tasks = [...document.querySelectorAll('#j-task-grid input:checked')].map(cb=>cb.value);
+  const job = {
+    id: editJobId||uid(), clientId, clientName:c.name, address:c.address,
+    date, tasks, doneTasks:[], completed:false,
+    notes: document.getElementById('j-notes').value.trim(),
+    photos: jobPhotos.slice(),
+    amount: document.getElementById('j-amount').value||0,
+    invoiced: false
+  };
+  if (editJobId) { const i=jobs.findIndex(j=>j.id===editJobId); if(i>-1) jobs[i]={...jobs[i],...job}; }
+  else jobs.push(job);
+  save(); closeModal('modal-job'); renderDashboard(); renderCalendar(); toast('Job saved.');
+}
+
+function toggleComplete(jobId) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  j.completed = !j.completed;
+  if (j.completed) j.doneTasks = [...(j.tasks||[])];
+  save(); renderDashboard();
+  toast(j.completed?'Job marked complete!':'Job reopened.');
+}
+
+function toggleTask(jobId, task) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  if (!j.doneTasks) j.doneTasks=[];
+  const i = j.doneTasks.indexOf(task);
+  if (i>-1) j.doneTasks.splice(i,1); else j.doneTasks.push(task);
+  if (j.doneTasks.length===(j.tasks||[]).length) j.completed=true;
+  save(); renderDashboard();
+}
+
+// ══════════════════════════════════════════
+//  JOB DETAIL
+// ══════════════════════════════════════════
+function openDetail(jobId) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  const c = clients.find(cl=>cl.id===j.clientId)||{};
+  document.getElementById('det-title').textContent = `${j.clientName} — ${fmtDate(j.date)}`;
+  document.getElementById('det-body').innerHTML = `
+    <div class="frow" style="margin-bottom:14px;">
+      <div><div class="flbl">Address</div><div>${c.address||'—'}</div><div style="font-size:12px;color:var(--gray);">${c.city||''} ${c.zip||''}</div></div>
+      <div><div class="flbl">Contact</div><div style="color:var(--orange);">${c.phone||'—'}</div><div style="font-size:12px;color:var(--gray);">${c.email||''}</div></div>
+    </div>
+    ${c.notes?`<div style="background:rgba(243,156,18,.1);border:1px solid var(--yellow);border-radius:7px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--yellow);">⚠ <strong>Note:</strong> ${c.notes}</div>`:''}
+    <div class="flbl">Tasks</div>
+    <div class="task-grid" style="margin-bottom:14px;">${(j.tasks||[]).map(t=>`
+      <div class="tci ${(j.doneTasks||[]).includes(t)?'on':''}" onclick="toggleTask('${j.id}','${t}');openDetail('${j.id}');">
+        <input type="checkbox" ${(j.doneTasks||[]).includes(t)?'checked':''}> <label>${t}</label>
+      </div>`).join('')}
+    </div>
+    <div class="flbl">Amount</div>
+    <div style="font-size:20px;font-weight:800;color:var(--orange);margin-bottom:14px;">$${parseFloat(j.amount||0).toFixed(2)}</div>
+    ${j.notes?`<div class="flbl">Work Notes</div><div style="font-size:13px;color:var(--gray-light);margin-bottom:14px;line-height:1.6;">${j.notes}</div>`:''}
+    ${j.photos&&j.photos.length?`<div class="flbl">Photos (${j.photos.length})</div><div class="photo-grid">${j.photos.map(p=>`<img src="${p}" class="photo-img">`).join('')}</div>`:''}
+    <div style="margin-top:14px;"><span class="badge ${j.completed?'b-green':'b-yellow'}">${j.completed?'Complete':'Pending'}</span></div>`;
+  document.getElementById('det-done-btn').textContent = j.completed?'Reopen Job':'Mark Complete';
+  document.getElementById('det-done-btn').onclick = ()=>{ toggleComplete(j.id); openDetail(j.id); };
+  document.getElementById('det-inv-btn').onclick = ()=>{ closeModal('modal-detail'); quickInvoice(j.id); };
+  openModal('modal-detail');
+}
+
+// ══════════════════════════════════════════
+//  PHOTOS
+// ══════════════════════════════════════════
+function handlePhotos(input) {
+  [...input.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{ jobPhotos.push(e.target.result); renderPhotoGrid(); };
+    r.readAsDataURL(f);
+  });
+}
+function renderPhotoGrid() {
+  document.getElementById('j-photo-grid').innerHTML = jobPhotos.map((p,i)=>`
+    <div class="photo-wrap"><img src="${p}" class="photo-img"><button class="photo-del" onclick="jobPhotos.splice(${i},1);renderPhotoGrid();">✕</button></div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════
+function renderCalendar() {
+  document.getElementById('cal-label').textContent = `${monthName(calMonth)} ${calYear}`;
+  const first = new Date(calYear,calMonth,1).getDay();
+  const dim   = new Date(calYear,calMonth+1,0).getDate();
+  const prev  = new Date(calYear,calMonth,0).getDate();
+  const t = todayStr();
+  let html = '';
+  const total = Math.ceil((first+dim)/7)*7;
+  for (let i=0;i<total;i++) {
+    let day,ds,other=false;
+    if (i<first) { day=prev-first+i+1; other=true; const m=String(calMonth).padStart(2,'0'); ds=`${calYear}-${m}-${String(day).padStart(2,'0')}`; }
+    else if (i>=first+dim) { day=i-first-dim+1; other=true; const m=String(calMonth+2).padStart(2,'0'); ds=`${calYear}-${m}-${String(day).padStart(2,'0')}`; }
+    else { day=i-first+1; ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; }
+    const isToday=ds===t;
+    const dayJobs=jobs.filter(j=>j.date===ds);
+    const evs=dayJobs.slice(0,3).map(j=>{
+      const hasMow=(j.tasks||[]).includes('Mow');
+      const hasGut=(j.tasks||[]).includes('Gutters');
+      const hasLand=(j.tasks||[]).includes('Landscape');
+      const cls=hasGut?'ev-gutter':hasLand?'ev-landscape':'ev-mow';
+      return `<div class="cal-ev ${cls} ${j.completed?'ev-done':''}" onclick="openDetail('${j.id}')">${j.clientName.split(' ')[0]}</div>`;
+    }).join('') + (dayJobs.length>3?`<div style="font-size:10px;color:var(--gray);">+${dayJobs.length-3}</div>`:'');
+    html+=`<div class="cal-cell ${other?'other':''} ${isToday?'today':''}" ondblclick="openJobModal('${ds}')">
+      <div class="cal-date-num">${day}</div>${evs}</div>`;
+  }
+  document.getElementById('cal-cells').innerHTML = html;
+}
+function changeMonth(d) { calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+
+// ══════════════════════════════════════════
+//  INVOICES
+// ══════════════════════════════════════════
+function openInvoiceSelectModal() {
+  const sel = document.getElementById('inv-client-sel');
+  sel.innerHTML = '<option value="">Choose client...</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.onchange = function() {
+    const id = this.value;
+    const wrap = document.getElementById('inv-job-sel-wrap');
+    if (!id) { wrap.style.display='none'; return; }
+    const cJobs = jobs.filter(j=>j.clientId===id);
+    if (!cJobs.length) { wrap.style.display='none'; return; }
+    wrap.style.display='';
+    document.getElementById('inv-job-list').innerHTML = cJobs.map(j=>`
+      <div class="tci" style="margin-bottom:6px;">
+        <input type="checkbox" id="ij-${j.id}" value="${j.id}" ${j.completed?'checked':''}>
+        <label for="ij-${j.id}">${fmtDate(j.date)} — ${(j.tasks||[]).join(', ')} — $${parseFloat(j.amount||0).toFixed(2)} ${j.invoiced?'<span style="color:var(--yellow);font-size:10px;">(already invoiced)</span>':''}</label>
+      </div>`).join('');
+  };
+  document.getElementById('inv-note').value='Thank you for your business!';
+  openModal('modal-inv-select');
+}
+
+function generateInvoiceFromSelect() {
+  const clientId = document.getElementById('inv-client-sel').value;
+  if (!clientId) { toast('Select a client.','red'); return; }
+  const selectedJobIds = [...document.querySelectorAll('#inv-job-list input:checked')].map(cb=>cb.value);
+  const c = clients.find(cl=>cl.id===clientId)||{};
+  const selectedJobs = jobs.filter(j=>selectedJobIds.includes(j.id));
+  const total = selectedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const note = document.getElementById('inv-note').value;
+  const invId = uid();
+  const inv = { id:invId, clientId, clientName:c.name, date:todayStr(), jobIds:selectedJobIds, total, paid:false, note };
+  invoices.push(inv);
+  selectedJobs.forEach(j=>{ j.invoiced=true; });
+  currentInvId = invId;
+  save();
+  closeModal('modal-inv-select');
+  buildInvoiceHTML(inv, c, selectedJobs);
+  openModal('modal-invoice');
+}
+
+function quickInvoice(jobId, clientIdOverride=null) {
+  let c, jobList;
+  if (jobId) {
+    const j = jobs.find(jb=>jb.id===jobId);
+    if (!j) return;
+    c = clients.find(cl=>cl.id===j.clientId)||{};
+    jobList = [j];
+  } else {
+    c = clients.find(cl=>cl.id===clientIdOverride)||{};
+    jobList = jobs.filter(j=>j.clientId===clientIdOverride);
+  }
+  const total = jobList.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const invId = uid();
+  const inv = { id:invId, clientId:c.id, clientName:c.name, date:todayStr(), jobIds:jobList.map(j=>j.id), total, paid:false, note:'Thank you for your business!' };
+  invoices.push(inv);
+  jobList.forEach(j=>j.invoiced=true);
+  currentInvId = invId;
+  save();
+  buildInvoiceHTML(inv, c, jobList);
+  openModal('modal-invoice');
+}
+
+function buildInvoiceHTML(inv, c, jobList) {
+  const num = 'COJ-' + String(invoices.findIndex(i=>i.id===inv.id)+1).padStart(4,'0');
+  const dueDate = addDays(inv.date, 14);
+  const rows = jobList.map(j=>`<tr><td>${(j.tasks||[]).join(', ')}</td><td>${fmtDate(j.date)}</td><td style="text-align:right;">$${parseFloat(j.amount||0).toFixed(2)}</td></tr>`).join('');
+  const methods = BIZ.payment.map(m=>`<span class="inv-pay-pill">${m}</span>`).join('');
+  document.getElementById('inv-content').innerHTML = `
+    <div class="inv-top">
+      <div>
+        <div class="inv-brand-name">Clark's Odd Jobs LLC</div>
+        <div class="inv-tagline">⭐ Veteran-Owned Home Services · Iowa City, Iowa</div>
+        <div class="inv-contact">
+          📞 ${BIZ.phone}<br>
+          ✉ ${BIZ.email}<br>
+          🌐 ${BIZ.web}
+        </div>
+      </div>
+      <div class="inv-meta">
+        <strong>INVOICE</strong><br>
+        #${num}<br>
+        Date: ${fmtDate(inv.date)}<br>
+        Due: ${fmtDate(dueDate)}
+      </div>
+    </div>
+    <div class="inv-bill">
+      <div class="inv-bill-lbl">Bill To</div>
+      <div class="inv-bill-name">${c.name||'Client'}</div>
+      <div style="font-size:12px;color:#555;margin-top:4px;line-height:1.7;">${c.address||''}<br>${c.city||''} ${c.zip||''}<br>${c.phone||''}</div>
+    </div>
+    <table class="inv-table">
+      <thead><tr><th>Service</th><th>Date</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>${rows}<tr class="total-row"><td colspan="2">Total Due</td><td style="text-align:right;">$${parseFloat(inv.total||0).toFixed(2)}</td></tr></tbody>
+    </table>
+    <div class="inv-pay">
+      <div class="inv-pay-title">💳 Payment Methods Accepted</div>
+      <div class="inv-pay-methods">${methods}</div>
+      <div style="font-size:11px;color:#777;margin-top:8px;">Payment due within 14 days · Questions? Call or text ${BIZ.phone}</div>
+    </div>
+    <div class="inv-footer">
+      ${inv.note||''}<br>
+      <span class="inv-vet">★ VETERAN-OWNED BUSINESS</span><br>
+      ${BIZ.name} · ${BIZ.phone} · ${BIZ.email} · ${BIZ.web}
+    </div>`;
+}
+
+function copyInvoice() {
+  const text = document.getElementById('inv-content').innerText;
+  navigator.clipboard.writeText(text).then(()=>toast('Invoice copied to clipboard — paste anywhere.'));
+}
+
+function markCurrentPaid() {
+  const inv = invoices.find(i=>i.id===currentInvId);
+  if (inv) { inv.paid=true; save(); closeModal('modal-invoice'); renderInvoices(); renderDashboard(); toast('Invoice marked as paid!'); }
+}
+
+function renderInvoices() {
+  const tbody = document.getElementById('inv-tbody');
+  if (!invoices.length) { tbody.innerHTML='<tr><td colspan="6" class="empty-state">No invoices yet.</td></tr>'; return; }
+  tbody.innerHTML = [...invoices].reverse().map((inv,ri)=>{
+    const num='COJ-'+String(invoices.length-ri).padStart(4,'0');
+    return `<tr>
+      <td><strong>${num}</strong></td>
+      <td>${inv.clientName}</td>
+      <td>${fmtDate(inv.date)}</td>
+      <td><strong>$${parseFloat(inv.total||0).toFixed(2)}</strong></td>
+      <td><span class="badge ${inv.paid?'b-green':'b-red'}">${inv.paid?'Paid':'Unpaid'}</span></td>
+      <td style="white-space:nowrap;display:flex;gap:5px;">
+        ${!inv.paid?`<button class="btn btn-green btn-xs" onclick="markPaidById('${inv.id}')">Paid</button>`:''}
+        <button class="btn btn-outline btn-xs" onclick="viewInvoiceById('${inv.id}')">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function markPaidById(id) {
+  const inv=invoices.find(i=>i.id===id);
+  if(inv){inv.paid=true;save();renderInvoices();renderDashboard();toast('Marked as paid!');}
+}
+
+function viewInvoiceById(id) {
+  const inv = invoices.find(i=>i.id===id);
+  if(!inv) return;
+  currentInvId = id;
+  const c = clients.find(cl=>cl.id===inv.clientId)||{};
+  const jl = jobs.filter(j=>(inv.jobIds||[]).includes(j.id));
+  buildInvoiceHTML(inv, c, jl.length?jl:[{tasks:['Services'],date:inv.date,amount:inv.total}]);
+  openModal('modal-invoice');
+}
+
+// ══════════════════════════════════════════
+//  GOOGLE SHEETS
+// ══════════════════════════════════════════
+function saveSheetURL() {
+  const url = document.getElementById('sheets-url').value.trim();
+  localStorage.setItem('coj_sheets_url', url);
+  toast('Sheets URL saved.');
+}
+async function testSync() {
+  const url = localStorage.getItem('coj_sheets_url');
+  if (!url) { toast('No URL saved yet.','red'); return; }
+  try { await fetch(url+'?action=ping',{method:'GET',mode:'no-cors'}); toast('Ping sent — check your Google Sheet.'); }
+  catch(e) { toast('Connection failed. Check URL.','red'); }
+}
+async function syncAllNow() {
+  const url = localStorage.getItem('coj_sheets_url');
+  if (!url) { toast('No URL saved yet.','red'); return; }
+  toast('Syncing all data...');
+  await pushToSheets(true);
+}
+async function pushToSheets(all=false) {
+  const url = localStorage.getItem('coj_sheets_url');
+  if (!url) return;
+  try {
+    const payload = { action:'sync', clients, jobs:all?jobs:jobs.slice(-300), invoices:all?invoices:invoices.slice(-100) };
+    fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});
+  } catch(e){}
+}
+
+function downloadAppsScript() {
+  const gs = `// Clark's Odd Jobs — Google Apps Script Backend
+// Paste into Extensions > Apps Script in your Google Sheet, then Deploy as Web App
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (data.action === 'sync') {
+      syncSheet(ss, 'Clients', ['ID','Name','Address','City','ZIP','Phone','Email','Rate','Services','Notes','Start','Active'],
+        data.clients.map(c=>[c.id,c.name,c.address,c.city,c.zip,c.phone,c.email,c.rate,(c.services||[]).join(', '),c.notes,c.start,c.active]));
+      syncSheet(ss, 'Jobs', ['ID','Client','Address','Date','Tasks','Complete','Amount','Notes','Invoiced'],
+        data.jobs.map(j=>[j.id,j.clientName,j.address,j.date,(j.tasks||[]).join(', '),j.completed,j.amount,j.notes,j.invoiced]),
+        {6:j=>j.completed, 9:j=>j.invoiced});
+      syncSheet(ss, 'Invoices', ['ID','Client','Date','Total','Paid'],
+        data.invoices.map(i=>[i.id,i.clientName,i.date,i.total,i.paid]));
+    }
+    return ok();
+  } catch(e) { return ContentService.createTextOutput(JSON.stringify({status:'error',msg:e.toString()})).setMimeType(ContentService.MimeType.JSON); }
+}
+
+function syncSheet(ss, name, headers, rows, updateCols) {
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() < 1) sh.appendRow(headers);
+  const existingIds = sh.getLastRow()>1 ? sh.getRange(2,1,sh.getLastRow()-1,1).getValues().flat() : [];
+  rows.forEach(row => {
+    const idx = existingIds.indexOf(row[0]);
+    if (idx < 0) sh.appendRow(row);
+    else if (updateCols) {
+      Object.keys(updateCols).forEach(col => sh.getRange(idx+2,parseInt(col)).setValue(row[parseInt(col)-1]));
+    }
+  });
+}
+
+function doGet(e) { return ok(); }
+function ok() { return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON); }`;
+  const blob = new Blob([gs],{type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ClarksOddJobs_AppsScript.gs';
+  a.click();
+  toast('Apps Script file downloaded.');
+}
+
+// ══════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function toast(msg, type='green') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='red'?'var(--red)':'var(--green)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  const saved = localStorage.getItem('coj_sheets_url');
+  if (saved) document.getElementById('sheets-url').value = saved;
+  renderDashboard();
+  renderCalendar();
+  // Service worker for PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+init();
+</script>
+</body>
+</html>
