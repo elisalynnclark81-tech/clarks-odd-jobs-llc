@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clark's Odd Jobs">
+<link rel="manifest" href="manifest.json">
+<title>Clark's Odd Jobs</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --orange:#E8620A; --orange-dark:#C4520A; --orange-light:#FF8C38;
+  --black:#0E0E0E; --dark:#181818; --sidebar-bg:#141414;
+  --card:#1C1C1C; --border:#2A2A2A; --surface:#222222;
+  --white:#FFFFFF; --gray:#808080; --gray-light:#AAAAAA;
+  --green:#27AE60; --yellow:#F39C12; --red:#E74C3C;
+}
+html,body { height:100%; overflow:hidden; }
+body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--black); color:var(--white); display:flex; font-size:14px; }
+
+/* ── SIDEBAR ── */
+#sidebar { width:240px; min-width:240px; background:var(--sidebar-bg); border-right:1px solid var(--border); display:flex; flex-direction:column; transition:width .2s,min-width .2s; overflow:hidden; z-index:200; }
+#sidebar.collapsed { width:58px; min-width:58px; }
+.sb-logo { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.sb-logo-icon { width:36px; height:36px; background:var(--orange); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.sb-logo-text { flex:1; overflow:hidden; }
+.sb-logo-text .t1 { font-size:14px; font-weight:800; color:var(--white); white-space:nowrap; }
+.sb-logo-text .t1 span { color:var(--orange); }
+.sb-logo-text .t2 { font-size:10px; color:var(--gray); white-space:nowrap; }
+.sb-collapse { background:none; border:none; color:var(--gray); cursor:pointer; font-size:14px; padding:4px; flex-shrink:0; }
+.sb-section { padding:6px 0; border-bottom:1px solid var(--border); }
+.sb-label { padding:6px 16px 2px; font-size:10px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.8px; white-space:nowrap; overflow:hidden; }
+.sb-item { display:flex; align-items:center; gap:12px; padding:10px 16px; cursor:pointer; color:var(--gray-light); transition:all .15s; white-space:nowrap; overflow:hidden; border-left:3px solid transparent; user-select:none; }
+.sb-item:hover { background:var(--surface); color:var(--white); }
+.sb-item.active { background:rgba(232,98,10,.15); color:var(--orange); border-left-color:var(--orange); }
+.sb-icon { font-size:15px; flex-shrink:0; width:20px; text-align:center; }
+.sb-text { font-size:13px; font-weight:500; }
+.sb-badge { margin-left:auto; background:var(--orange); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; flex-shrink:0; }
+#sidebar.collapsed .sb-label,
+#sidebar.collapsed .sb-text,
+#sidebar.collapsed .sb-badge,
+#sidebar.collapsed .sb-logo-text { display:none; }
+
+/* ── MAIN ── */
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+.topbar { height:54px; background:var(--dark); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 18px; gap:14px; flex-shrink:0; }
+.topbar-title { font-size:15px; font-weight:700; }
+.topbar-sub { font-size:11px; color:var(--gray); }
+.topbar-right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+#content { flex:1; overflow-y:auto; padding:18px; }
+
+/* ── BUTTONS ── */
+.btn { padding:8px 14px; border-radius:7px; border:none; cursor:pointer; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:all .15s; white-space:nowrap; }
+.btn-primary { background:var(--orange); color:#fff; }
+.btn-primary:hover { background:var(--orange-dark); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--gray-light); }
+.btn-outline:hover { border-color:var(--orange); color:var(--orange); }
+.btn-green { background:var(--green); color:#fff; }
+.btn-red { background:var(--red); color:#fff; }
+.btn-sm { padding:5px 10px; font-size:12px; border-radius:5px; }
+.btn-xs { padding:3px 8px; font-size:11px; border-radius:4px; }
+
+/* ── VIEWS ── */
+.view { display:none; }
+.view.active { display:block; }
+
+/* ── STATS ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.stat-lbl { font-size:10px; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; font-weight:600; }
+.stat-val { font-size:24px; font-weight:800; }
+.stat-val.o { color:var(--orange); }
+.stat-val.g { color:var(--green); }
+.stat-val.y { color:var(--yellow); }
+.stat-sub { font-size:11px; color:var(--gray); margin-top:3px; }
+
+/* ── SECTION HEADER ── */
+.sec-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.sec-title { font-size:15px; font-weight:700; }
+.sec-title span { color:var(--orange); }
+
+/* ── JOB CARDS ── */
+.job-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; margin-bottom:10px; transition:border-color .15s; }
+.job-card:hover { border-color:var(--orange); }
+.job-card.done { opacity:.55; border-style:dashed; }
+.jc-check { width:24px; height:24px; border-radius:50%; border:2px solid var(--border); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-top:1px; font-size:13px; font-weight:700; }
+.jc-check.on { background:var(--green); border-color:var(--green); color:#fff; }
+.jc-info { flex:1; min-width:0; }
+.jc-client { font-size:14px; font-weight:700; }
+.jc-addr { font-size:12px; color:var(--gray); margin-top:2px; }
+.jc-tasks { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.task-chip { font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600; cursor:pointer; }
+.tc-pending { background:rgba(232,98,10,.15); color:var(--orange-light); }
+.tc-done { background:rgba(39,174,96,.15); color:var(--green); text-decoration:line-through; opacity:.7; }
+.jc-actions { display:flex; flex-direction:column; gap:5px; align-items:flex-end; flex-shrink:0; }
+.jc-phone { font-size:12px; color:var(--orange); }
+.jc-date { font-size:11px; color:var(--gray); }
+
+/* ── UPCOMING ── */
+.up-item { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:11px 13px; display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.up-datebox { background:var(--orange); border-radius:6px; padding:6px 10px; text-align:center; min-width:44px; flex-shrink:0; }
+.up-day { font-size:18px; font-weight:800; line-height:1; }
+.up-mon { font-size:10px; font-weight:700; text-transform:uppercase; }
+.up-info { flex:1; min-width:0; }
+.up-client { font-size:13px; font-weight:700; }
+.up-detail { font-size:11px; color:var(--gray); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── CALENDAR ── */
+.cal-hdr { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.cal-nav { background:var(--surface); border:1px solid var(--border); color:var(--white); padding:6px 12px; border-radius:6px; cursor:pointer; }
+.cal-month { font-size:17px; font-weight:800; }
+.cal-grid { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.cal-dnames { display:grid; grid-template-columns:repeat(7,1fr); background:var(--surface); }
+.cal-dname { padding:9px; text-align:center; font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; }
+.cal-cells { display:grid; grid-template-columns:repeat(7,1fr); }
+.cal-cell { min-height:88px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); padding:5px; }
+.cal-cell:nth-child(7n) { border-right:none; }
+.cal-cell.other { opacity:.35; }
+.cal-cell.today { background:rgba(232,98,10,.07); }
+.cal-date-num { font-size:12px; font-weight:600; color:var(--gray-light); margin-bottom:3px; }
+.cal-cell.today .cal-date-num { color:var(--orange); }
+.cal-ev { font-size:10px; padding:2px 5px; border-radius:3px; margin-bottom:2px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; border-left:3px solid; }
+.ev-mow { background:rgba(232,98,10,.2); color:var(--orange-light); border-color:var(--orange); }
+.ev-gutter { background:rgba(39,174,96,.2); color:var(--green); border-color:var(--green); }
+.ev-landscape { background:rgba(52,152,219,.2); color:#5DADE2; border-color:#5DADE2; }
+.ev-handyman { background:rgba(155,89,182,.2); color:#BB8FCE; border-color:#BB8FCE; }
+.ev-done { opacity:.45; text-decoration:line-through; }
+
+/* ── TABLE ── */
+.data-table { width:100%; border-collapse:collapse; }
+.data-table th { text-align:left; padding:10px 13px; font-size:11px; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+.data-table td { padding:11px 13px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+.data-table tr:hover td { background:var(--surface); }
+.data-table tr:last-child td { border-bottom:none; }
+.badge { padding:3px 9px; border-radius:4px; font-size:11px; font-weight:700; }
+.b-green { background:rgba(39,174,96,.15); color:var(--green); }
+.b-yellow { background:rgba(243,156,18,.15); color:var(--yellow); }
+.b-red { background:rgba(231,76,60,.15); color:var(--red); }
+.b-gray { background:rgba(128,128,128,.15); color:var(--gray); }
+
+/* ── ROUTE VIEW ── */
+.route-stop { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:14px; margin-bottom:10px; }
+.route-num { width:32px; height:32px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; flex-shrink:0; }
+.route-info { flex:1; }
+.route-client { font-size:15px; font-weight:700; }
+.route-addr { font-size:12px; color:var(--gray-light); margin-top:3px; }
+.route-tasks { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+.route-actions { display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.maps-btn { background:rgba(232,98,10,.15); color:var(--orange-light); border:1px solid var(--orange); padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+
+/* ── MODALS ── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:1000; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--dark); border:1px solid var(--border); border-radius:12px; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; }
+.modal-lg { max-width:680px; }
+.modal-hdr { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:var(--dark); z-index:1; }
+.modal-title { font-size:16px; font-weight:700; }
+.modal-x { background:none; border:none; color:var(--gray); font-size:22px; cursor:pointer; line-height:1; }
+.modal-body { padding:20px; }
+.modal-ftr { padding:14px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; position:sticky; bottom:0; background:var(--dark); }
+
+/* ── FORMS ── */
+.fg { margin-bottom:14px; }
+.flbl { font-size:12px; font-weight:700; color:var(--gray-light); margin-bottom:5px; display:block; }
+.fi, .fsel, .fta { width:100%; background:var(--surface); border:1px solid var(--border); color:var(--white); padding:9px 12px; border-radius:7px; font-size:13px; outline:none; transition:border-color .15s; font-family:inherit; }
+.fi:focus,.fsel:focus,.fta:focus { border-color:var(--orange); }
+.fsel option { background:var(--dark); }
+.fta { min-height:78px; resize:vertical; }
+.frow { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.frow3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+/* ── TASK CHECKLIST ── */
+.task-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.tci { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--surface); border-radius:6px; border:1px solid var(--border); cursor:pointer; transition:all .15s; }
+.tci:hover { border-color:var(--orange); }
+.tci.on { border-color:var(--orange); background:rgba(232,98,10,.1); }
+.tci input { accent-color:var(--orange); width:15px; height:15px; cursor:pointer; }
+.tci label { font-size:12px; cursor:pointer; font-weight:500; }
+
+/* ── PHOTOS ── */
+.photo-drop { border:2px dashed var(--border); border-radius:8px; padding:22px; text-align:center; cursor:pointer; transition:border-color .15s; }
+.photo-drop:hover { border-color:var(--orange); }
+.photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.photo-wrap { position:relative; }
+.photo-img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block; }
+.photo-del { position:absolute; top:4px; right:4px; background:var(--red); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+/* ── INVOICE ── */
+.inv-box { background:#fff; color:#111; border-radius:8px; padding:24px; font-size:13px; }
+.inv-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; gap:12px; }
+.inv-brand-name { font-size:22px; font-weight:900; color:var(--orange); }
+.inv-tagline { font-size:11px; color:#666; margin-top:2px; }
+.inv-contact { font-size:11px; color:#444; margin-top:6px; line-height:1.7; }
+.inv-meta { text-align:right; font-size:12px; color:#555; line-height:1.8; }
+.inv-meta strong { color:#111; }
+.inv-bill { background:#f7f7f7; border-radius:6px; padding:12px; margin-bottom:16px; }
+.inv-bill-lbl { font-size:10px; font-weight:700; text-transform:uppercase; color:#888; letter-spacing:.5px; margin-bottom:5px; }
+.inv-bill-name { font-size:14px; font-weight:700; }
+.inv-table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+.inv-table th { background:#111; color:#fff; padding:8px 10px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.inv-table td { padding:8px 10px; border-bottom:1px solid #eee; }
+.inv-table .total-row td { font-weight:800; font-size:14px; border-top:2px solid #111; border-bottom:none; }
+.inv-pay { background:#fff9f5; border:1px solid #FCDAB0; border-radius:6px; padding:12px; margin-bottom:16px; }
+.inv-pay-title { font-size:11px; font-weight:700; text-transform:uppercase; color:#888; margin-bottom:6px; }
+.inv-pay-methods { display:flex; flex-wrap:wrap; gap:6px; }
+.inv-pay-pill { background:#111; color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.inv-footer { text-align:center; font-size:11px; color:#999; border-top:1px solid #eee; padding-top:12px; line-height:1.8; }
+.inv-vet { display:inline-block; background:#E8620A; color:#fff; padding:3px 10px; border-radius:20px; font-size:10px; font-weight:800; letter-spacing:.5px; }
+
+/* ── SYNC VIEW ── */
+.sync-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:22px; max-width:580px; }
+.sync-step { display:flex; gap:12px; margin-bottom:14px; }
+.sync-step-num { width:26px; height:26px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+.sync-step-text { font-size:13px; color:var(--gray-light); line-height:1.6; padding-top:2px; }
+.sync-step-text strong { color:var(--white); }
+
+/* ── SEARCH ── */
+.search-wrap { position:relative; }
+.search-wrap input { background:var(--surface); border:1px solid var(--border); color:var(--white); padding:8px 12px 8px 34px; border-radius:7px; font-size:13px; outline:none; width:200px; }
+.search-wrap input:focus { border-color:var(--orange); }
+.search-ico { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--gray); font-size:14px; pointer-events:none; }
+
+/* ── TOAST ── */
+.toast { position:fixed; bottom:20px; right:20px; padding:12px 18px; border-radius:8px; font-size:13px; font-weight:700; z-index:9999; transform:translateY(80px); transition:transform .3s; box-shadow:0 4px 20px rgba(0,0,0,.5); color:#fff; }
+.toast.show { transform:translateY(0); }
+
+/* ── DIVIDER ── */
+.divider { height:1px; background:var(--border); margin:16px 0; }
+.empty-state { text-align:center; padding:36px 20px; color:var(--gray); }
+.es-ico { font-size:38px; margin-bottom:10px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--black); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* ── MOBILE ── */
+@media(max-width:700px) {
+  #sidebar { position:fixed; top:0; left:0; bottom:0; width:240px; transform:translateX(-100%); transition:transform .25s; }
+  #sidebar.mobile-open { transform:translateX(0); }
+  #sidebar.collapsed { width:240px; transform:translateX(-100%); }
+  #sidebar.collapsed .sb-label,#sidebar.collapsed .sb-text,#sidebar.collapsed .sb-badge,#sidebar.collapsed .sb-logo-text { display:block; }
+  .mob-menu { display:flex !important; }
+  .stats-row { grid-template-columns:1fr 1fr; }
+  .dashboard-cols { grid-template-columns:1fr !important; }
+  .frow { grid-template-columns:1fr; }
+  .frow3 { grid-template-columns:1fr 1fr; }
+  .search-wrap input { width:140px; }
+  .topbar-sub { display:none; }
+}
+.mob-menu { display:none; background:none; border:none; color:var(--white); font-size:22px; cursor:pointer; }
+#mob-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:199; }
+#mob-overlay.show { display:block; }
+</style>
+</head>
+<body>
+
+<!-- MOBILE OVERLAY -->
+<div id="mob-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">✂</div>
+    <div class="sb-logo-text">
+      <div class="t1"><span>Clark's</span> Odd Jobs</div>
+      <div class="t2">Veteran-Owned · Iowa City, IA</div>
+    </div>
+    <button class="sb-collapse" onclick="toggleSidebar()">◀</button>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Main</div>
+    <div class="sb-item active" onclick="showView('dashboard')"><span class="sb-icon">⊞</span><span class="sb-text">Dashboard</span></div>
+    <div class="sb-item" onclick="showView('route')"><span class="sb-icon">🗺</span><span class="sb-text">Today's Route</span><span class="sb-badge" id="route-badge">0</span></div>
+    <div class="sb-item" onclick="showView('schedule')"><span class="sb-icon">📅</span><span class="sb-text">Schedule</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Clients</div>
+    <div class="sb-item" onclick="showView('clients')"><span class="sb-icon">👥</span><span class="sb-text">All Clients</span></div>
+    <div class="sb-item" onclick="openClientModal()"><span class="sb-icon">➕</span><span class="sb-text">Add Client</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Billing</div>
+    <div class="sb-item" onclick="showView('invoices')"><span class="sb-icon">💵</span><span class="sb-text">Invoices</span></div>
+  </div>
+  <div class="sb-section">
+    <div class="sb-label">Settings</div>
+    <div class="sb-item" onclick="showView('sync')"><span class="sb-icon">🔗</span><span class="sb-text">Google Sheets Sync</span></div>
+    <div class="sb-item" onclick="showView('github')"><span class="sb-icon">🚀</span><span class="sb-text">GitHub Hosting</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <button class="mob-menu" id="mob-menu-btn" onclick="openMobileMenu()">☰</button>
+    <div>
+      <div class="topbar-title" id="tb-title">Dashboard</div>
+      <div class="topbar-sub">Clark's Odd Jobs LLC · (319) 325-9383</div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-wrap"><span class="search-ico">🔍</span><input type="text" placeholder="Search..." oninput="searchClients(this.value)" id="search-input"></div>
+      <button class="btn btn-outline btn-sm" onclick="openJobModal()">+ Job</button>
+      <button class="btn btn-primary btn-sm" onclick="openClientModal()">+ Client</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-lbl">Total Clients</div><div class="stat-val o" id="st-clients">0</div><div class="stat-sub">Active accounts</div></div>
+        <div class="stat-card"><div class="stat-lbl">Jobs This Month</div><div class="stat-val" id="st-jobs">0</div><div class="stat-sub">Scheduled visits</div></div>
+        <div class="stat-card"><div class="stat-lbl">Collected</div><div class="stat-val g" id="st-rev">$0</div><div class="stat-sub">Paid invoices</div></div>
+        <div class="stat-card"><div class="stat-lbl">Outstanding</div><div class="stat-val y" id="st-out">$0</div><div class="stat-sub">Unpaid</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;" class="dashboard-cols">
+        <div>
+          <div class="sec-hdr"><div class="sec-title">Today — <span id="today-lbl"></span></div><button class="btn btn-primary btn-sm" onclick="openJobModal()">+ Add Job</button></div>
+          <div id="today-cards"><div class="empty-state"><div class="es-ico">📋</div>No jobs today.</div></div>
+        </div>
+        <div>
+          <div class="sec-hdr"><div class="sec-title">Next <span>7 Days</span></div></div>
+          <div id="upcoming-list"><div class="empty-state"><div class="es-ico">📆</div>Nothing upcoming.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ TODAY'S ROUTE ═══ -->
+    <div id="view-route" class="view">
+      <div class="sec-hdr">
+        <div class="sec-title">Today's Route — <span id="route-date"></span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="openAllInMaps()">Open All in Maps</button>
+          <button class="btn btn-primary btn-sm" onclick="openJobModal()">+ Add Stop</button>
+        </div>
+      </div>
+      <div id="route-stops"><div class="empty-state"><div class="es-ico">🗺</div>No stops today.</div></div>
+    </div>
+
+    <!-- ═══ SCHEDULE ═══ -->
+    <div id="view-schedule" class="view">
+      <div class="cal-hdr">
+        <button class="cal-nav" onclick="changeMonth(-1)">◀</button>
+        <div class="cal-month" id="cal-label"></div>
+        <button class="cal-nav" onclick="changeMonth(1)">▶</button>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="openJobModal()">+ New Visit</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-dnames">
+          <div class="cal-dname">Sun</div><div class="cal-dname">Mon</div><div class="cal-dname">Tue</div>
+          <div class="cal-dname">Wed</div><div class="cal-dname">Thu</div><div class="cal-dname">Fri</div><div class="cal-dname">Sat</div>
+        </div>
+        <div class="cal-cells" id="cal-cells"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CLIENTS ═══ -->
+    <div id="view-clients" class="view">
+      <div class="sec-hdr"><div class="sec-title">All Clients</div><button class="btn btn-primary btn-sm" onclick="openClientModal()">+ Add Client</button></div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:auto;">
+        <table class="data-table">
+          <thead><tr><th>Client</th><th>Address</th><th>Phone / Email</th><th>Services</th><th>Next Visit</th><th>Balance</th><th>Actions</th></tr></thead>
+          <tbody id="clients-tbody"><tr><td colspan="7" class="empty-state">No clients yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ INVOICES ═══ -->
+    <div id="view-invoices" class="view">
+      <div class="sec-hdr"><div class="sec-title">Invoices</div><button class="btn btn-primary btn-sm" onclick="openInvoiceSelectModal()">+ Create Invoice</button></div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:auto;">
+        <table class="data-table">
+          <thead><tr><th>Invoice #</th><th>Client</th><th>Date</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="inv-tbody"><tr><td colspan="6" class="empty-state">No invoices yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ GOOGLE SHEETS SYNC ═══ -->
+    <div id="view-sync" class="view">
+      <div class="sec-hdr"><div class="sec-title">Google Sheets Sync</div></div>
+      <div class="sync-card">
+        <div class="fg">
+          <label class="flbl">Apps Script Web App URL</label>
+          <input class="fi" id="sheets-url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn btn-primary" onclick="saveSheetURL()">Save URL</button>
+          <button class="btn btn-outline" onclick="testSync()">Test Connection</button>
+          <button class="btn btn-outline" onclick="syncAllNow()">Sync All Now</button>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Setup Steps</div>
+        <div class="sync-step"><div class="sync-step-num">1</div><div class="sync-step-text">Open <strong>Google Sheets</strong> → create a new blank sheet</div></div>
+        <div class="sync-step"><div class="sync-step-num">2</div><div class="sync-step-text">Click <strong>Extensions → Apps Script</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">3</div><div class="sync-step-text">Download and paste the script code below</div></div>
+        <div class="sync-step"><div class="sync-step-num">4</div><div class="sync-step-text">Click <strong>Deploy → New Deployment → Web App</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">5</div><div class="sync-step-text">Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong> → Deploy</div></div>
+        <div class="sync-step"><div class="sync-step-num">6</div><div class="sync-step-text">Copy the Web App URL and paste it above → Save</div></div>
+        <button class="btn btn-outline" style="margin-top:8px;" onclick="downloadAppsScript()">⬇ Download Apps Script (.gs)</button>
+      </div>
+    </div>
+
+    <!-- ═══ GITHUB HOSTING ═══ -->
+    <div id="view-github" class="view">
+      <div class="sec-hdr"><div class="sec-title">GitHub Pages Hosting</div></div>
+      <div class="sync-card">
+        <div style="font-size:13px;color:var(--gray-light);margin-bottom:18px;line-height:1.7;">Host this dashboard on GitHub Pages so you can access it from any phone, tablet, or computer — no app store needed. Add it to your phone home screen for a full app experience.</div>
+        <div class="sync-step"><div class="sync-step-num">1</div><div class="sync-step-text">Go to <strong>github.com</strong> → sign in or create a free account</div></div>
+        <div class="sync-step"><div class="sync-step-num">2</div><div class="sync-step-text">Click <strong>New Repository</strong> → name it <strong>clarks-odd-jobs</strong> → set Public → Create</div></div>
+        <div class="sync-step"><div class="sync-step-num">3</div><div class="sync-step-text">Click <strong>Add file → Upload files</strong> → upload this <strong>index.html</strong> file</div></div>
+        <div class="sync-step"><div class="sync-step-num">4</div><div class="sync-step-text">Go to <strong>Settings → Pages</strong> → Source: <strong>Deploy from branch → main → / (root)</strong> → Save</div></div>
+        <div class="sync-step"><div class="sync-step-num">5</div><div class="sync-step-text">Your dashboard will be live at <strong>yourusername.github.io/clarks-odd-jobs</strong></div></div>
+        <div class="sync-step"><div class="sync-step-num">6</div><div class="sync-step-text">On your iPhone/iPad: open Safari → navigate to the URL → tap <strong>Share → Add to Home Screen</strong></div></div>
+        <div class="divider"></div>
+        <div style="font-size:13px;color:var(--gray-light);line-height:1.7;"><strong style="color:var(--white);">Note:</strong> Data is saved locally on each device. Connect Google Sheets sync to share data across devices.</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ════════════ ADD CLIENT MODAL ════════════ -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="client-modal-title">Add New Client</div><button class="modal-x" onclick="closeModal('modal-client')">✕</button></div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="flbl">First Name *</label><input class="fi" id="c-first" placeholder="Jane"></div>
+        <div class="fg"><label class="flbl">Last Name *</label><input class="fi" id="c-last" placeholder="Smith"></div>
+      </div>
+      <div class="fg"><label class="flbl">Street Address *</label><input class="fi" id="c-addr" placeholder="1234 Elm Street"></div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">City</label><input class="fi" id="c-city" value="Iowa City"></div>
+        <div class="fg"><label class="flbl">State / ZIP</label><input class="fi" id="c-zip" placeholder="IA 52240"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Phone</label><input class="fi" id="c-phone" placeholder="(319) 555-0100" type="tel"></div>
+        <div class="fg"><label class="flbl">Email</label><input class="fi" id="c-email" placeholder="jane@email.com" type="email"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="flbl">Service Start Date</label><input class="fi" id="c-start" type="date"></div>
+        <div class="fg"><label class="flbl">Visits Per Month</label>
+          <select class="fsel" id="c-mows">
+            <option value="3">3x / month</option>
+            <option value="4">4x / month (weekly)</option>
+            <option value="2">2x / month (bi-weekly)</option>
+            <option value="1">1x / month</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Monthly Rate ($)</label><input class="fi" id="c-rate" placeholder="150.00" type="number" step="0.01"></div>
+      <div class="fg">
+        <label class="flbl">Default Services</label>
+        <div class="task-grid" id="c-svc-grid">
+          <div class="tci"><input type="checkbox" id="cs-mow" value="Mow"><label for="cs-mow">Mowing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-weed" value="Weed Eat"><label for="cs-weed">Weed Eating</label></div>
+          <div class="tci"><input type="checkbox" id="cs-edge" value="Edge"><label for="cs-edge">Edging</label></div>
+          <div class="tci"><input type="checkbox" id="cs-blow" value="Blow"><label for="cs-blow">Blowing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-gutter" value="Gutters"><label for="cs-gutter">Gutter Cleaning</label></div>
+          <div class="tci"><input type="checkbox" id="cs-landscape" value="Landscape"><label for="cs-landscape">Landscaping</label></div>
+          <div class="tci"><input type="checkbox" id="cs-mulch" value="Mulch"><label for="cs-mulch">Mulching</label></div>
+          <div class="tci"><input type="checkbox" id="cs-trim" value="Hedge Trim"><label for="cs-trim">Hedge Trim</label></div>
+          <div class="tci"><input type="checkbox" id="cs-fence" value="Fence Repair"><label for="cs-fence">Fence Repair</label></div>
+          <div class="tci"><input type="checkbox" id="cs-deck" value="Deck Stain"><label for="cs-deck">Deck Staining</label></div>
+          <div class="tci"><input type="checkbox" id="cs-power" value="Power Wash"><label for="cs-power">Power Washing</label></div>
+          <div class="tci"><input type="checkbox" id="cs-cleanup" value="Cleanup"><label for="cs-cleanup">Yard Cleanup</label></div>
+          <div class="tci"><input type="checkbox" id="cs-aerate" value="Aerate"><label for="cs-aerate">Aeration</label></div>
+          <div class="tci"><input type="checkbox" id="cs-fert" value="Fertilize"><label for="cs-fert">Fertilizing</label></div>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Notes / Gate Code / Special Instructions</label><textarea class="fta" id="c-notes" placeholder="Gate code 1234, dog in backyard, park on street..."></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-client')">Cancel</button>
+      <button class="btn btn-primary" id="client-save-btn" onclick="saveClient()">Save & Auto-Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ ADD JOB MODAL ════════════ -->
+<div class="modal-overlay" id="modal-job">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="job-modal-title">Add Job</div><button class="modal-x" onclick="closeModal('modal-job')">✕</button></div>
+    <div class="modal-body">
+      <div class="frow">
+        <div class="fg"><label class="flbl">Client *</label>
+          <select class="fsel" id="j-client" onchange="onJobClientChange()">
+            <option value="">Select client...</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">Date *</label><input class="fi" id="j-date" type="date"></div>
+      </div>
+      <div class="fg" id="j-addr-block" style="display:none;">
+        <label class="flbl">Address</label>
+        <div style="background:var(--surface);padding:9px 12px;border-radius:7px;font-size:13px;color:var(--gray-light);" id="j-addr-val"></div>
+      </div>
+      <div class="fg">
+        <label class="flbl">Tasks for This Visit</label>
+        <div class="task-grid" id="j-task-grid">
+          <div class="tci"><input type="checkbox" id="jt-mow" value="Mow"><label for="jt-mow">Mowing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-weed" value="Weed Eat"><label for="jt-weed">Weed Eating</label></div>
+          <div class="tci"><input type="checkbox" id="jt-edge" value="Edge"><label for="jt-edge">Edging</label></div>
+          <div class="tci"><input type="checkbox" id="jt-blow" value="Blow"><label for="jt-blow">Blowing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-gutter" value="Gutters"><label for="jt-gutter">Gutter Cleaning</label></div>
+          <div class="tci"><input type="checkbox" id="jt-landscape" value="Landscape"><label for="jt-landscape">Landscaping</label></div>
+          <div class="tci"><input type="checkbox" id="jt-mulch" value="Mulch"><label for="jt-mulch">Mulching</label></div>
+          <div class="tci"><input type="checkbox" id="jt-trim" value="Hedge Trim"><label for="jt-trim">Hedge Trim</label></div>
+          <div class="tci"><input type="checkbox" id="jt-fence" value="Fence Repair"><label for="jt-fence">Fence Repair</label></div>
+          <div class="tci"><input type="checkbox" id="jt-deck" value="Deck Stain"><label for="jt-deck">Deck Staining</label></div>
+          <div class="tci"><input type="checkbox" id="jt-power" value="Power Wash"><label for="jt-power">Power Washing</label></div>
+          <div class="tci"><input type="checkbox" id="jt-cleanup" value="Cleanup"><label for="jt-cleanup">Yard Cleanup</label></div>
+          <div class="tci"><input type="checkbox" id="jt-aerate" value="Aerate"><label for="jt-aerate">Aeration</label></div>
+          <div class="tci"><input type="checkbox" id="jt-fert" value="Fertilize"><label for="jt-fert">Fertilizing</label></div>
+        </div>
+      </div>
+      <div class="fg"><label class="flbl">Job Amount ($)</label><input class="fi" id="j-amount" placeholder="75.00" type="number" step="0.01"></div>
+      <div class="fg"><label class="flbl">Work Notes / Details</label><textarea class="fta" id="j-notes" placeholder="What was done, conditions found, issues to flag..."></textarea></div>
+      <div class="fg">
+        <label class="flbl">Photos</label>
+        <div class="photo-drop" onclick="document.getElementById('j-photo-input').click()">
+          <div style="font-size:30px;margin-bottom:6px;">📷</div>
+          <div style="font-size:13px;color:var(--gray-light);">Tap to add from camera or gallery</div>
+        </div>
+        <input type="file" id="j-photo-input" multiple accept="image/*" capture="environment" style="display:none;" onchange="handlePhotos(this)">
+        <div class="photo-grid" id="j-photo-grid"></div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-job')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJob()">Save Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ JOB DETAIL MODAL ════════════ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="det-title">Job Detail</div><button class="modal-x" onclick="closeModal('modal-detail')">✕</button></div>
+    <div class="modal-body" id="det-body"></div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-detail')">Close</button>
+      <button class="btn btn-outline btn-sm" id="det-inv-btn">Generate Invoice</button>
+      <button class="btn btn-primary btn-sm" id="det-done-btn">Mark Complete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ INVOICE SELECT MODAL ════════════ -->
+<div class="modal-overlay" id="modal-inv-select">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Create Invoice</div><button class="modal-x" onclick="closeModal('modal-inv-select')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="flbl">Select Client</label>
+        <select class="fsel" id="inv-client-sel">
+          <option value="">Choose client...</option>
+        </select>
+      </div>
+      <div class="fg" id="inv-job-sel-wrap" style="display:none;">
+        <label class="flbl">Select Jobs to Include</label>
+        <div id="inv-job-list"></div>
+      </div>
+      <div class="fg"><label class="flbl">Custom Note (optional)</label><textarea class="fta" id="inv-note" placeholder="Thank you for your business!"></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-inv-select')">Cancel</button>
+      <button class="btn btn-primary" onclick="generateInvoiceFromSelect()">Preview Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ INVOICE VIEW MODAL ════════════ -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal modal-lg">
+    <div class="modal-hdr"><div class="modal-title">Invoice Preview</div><button class="modal-x" onclick="closeModal('modal-invoice')">✕</button></div>
+    <div class="modal-body"><div class="inv-box" id="inv-content"></div></div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Close</button>
+      <button class="btn btn-outline" onclick="copyInvoice()">📋 Copy Invoice</button>
+      <button class="btn btn-green" onclick="markCurrentPaid()">✓ Mark Paid</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let clients  = JSON.parse(localStorage.getItem('coj_clients')  || '[]');
+let jobs     = JSON.parse(localStorage.getItem('coj_jobs')     || '[]');
+let invoices = JSON.parse(localStorage.getItem('coj_invoices') || '[]');
+let calMonth = new Date().getMonth();
+let calYear  = new Date().getFullYear();
+let editJobId = null;
+let jobPhotos = [];
+let currentInvId = null;
+
+const BIZ = {
+  name:    "Clark's Odd Jobs LLC",
+  tagline: "Veteran-Owned Home Services",
+  phone:   "(319) 325-9383",
+  email:   "clarksoddjobsllc@gmail.com",
+  web:     "www.clarks-odd-jobs.com",
+  city:    "Iowa City, Iowa",
+  payment: ["PayPal","CashApp","Venmo","Check","Cash","Tap to Pay"]
+};
+
+// ── PERSIST ──
+function save() {
+  localStorage.setItem('coj_clients',  JSON.stringify(clients));
+  localStorage.setItem('coj_jobs',     JSON.stringify(jobs));
+  localStorage.setItem('coj_invoices', JSON.stringify(invoices));
+  pushToSheets();
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2,6); }
+
+// ══════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  const titles = {dashboard:'Dashboard',route:"Today's Route",schedule:'Schedule',clients:'All Clients',invoices:'Invoices',sync:'Google Sheets Sync',github:'GitHub Pages Hosting'};
+  document.getElementById('tb-title').textContent = titles[name]||name;
+  closeMobileMenu();
+  if (name==='dashboard') renderDashboard();
+  if (name==='route')     renderRoute();
+  if (name==='schedule')  renderCalendar();
+  if (name==='clients')   renderClients();
+  if (name==='invoices')  renderInvoices();
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+function openMobileMenu()  { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('mob-overlay').classList.add('show'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('mob-overlay').classList.remove('show'); }
+
+// ══════════════════════════════════════════
+//  DATE HELPERS
+// ══════════════════════════════════════════
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function fmtDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return `${m}/${d}/${y}`; }
+function addDays(s,n) { const d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function monthName(m) { return ['January','February','March','April','May','June','July','August','September','October','November','December'][m]; }
+
+function autoSchedule(startDate, mowsPerMonth) {
+  const d = new Date(startDate+'T12:00:00');
+  const y = d.getFullYear(), mo = d.getMonth();
+  const dim = new Date(y, mo+1, 0).getDate();
+  const interval = Math.floor(dim / mowsPerMonth);
+  const dates = [];
+  let day = d.getDate();
+  for (let i=0; i<mowsPerMonth; i++) {
+    dates.push(new Date(y,mo,day).toISOString().split('T')[0]);
+    day += interval;
+    if (day > dim) day = dim;
+  }
+  return dates;
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard() {
+  const t = todayStr();
+  const d = new Date(t+'T12:00:00');
+  const lbl = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('today-lbl').textContent = lbl;
+
+  document.getElementById('st-clients').textContent = clients.length;
+  const nm = new Date().getMonth(), ny = new Date().getFullYear();
+  const mJobs = jobs.filter(j=>{ const jd=new Date(j.date+'T12:00:00'); return jd.getMonth()===nm && jd.getFullYear()===ny; });
+  document.getElementById('st-jobs').textContent = mJobs.length;
+
+  const paid = invoices.filter(i=>i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+  const owed = invoices.filter(i=>!i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+  document.getElementById('st-rev').textContent = '$'+paid.toFixed(2);
+  document.getElementById('st-out').textContent = '$'+owed.toFixed(2);
+
+  // badge
+  const next7 = jobs.filter(j=>j.date>=t && j.date<=addDays(t,7) && !j.completed);
+  document.getElementById('route-badge').textContent = getTodayJobs().length;
+
+  renderTodayCards();
+  renderUpcoming();
+}
+
+function getTodayJobs() { return jobs.filter(j=>j.date===todayStr()).sort((a,b)=>a.clientName.localeCompare(b.clientName)); }
+
+function renderTodayCards() {
+  const tj = getTodayJobs();
+  const el = document.getElementById('today-cards');
+  el.innerHTML = tj.length ? tj.map(j=>jobCardHTML(j)).join('') : '<div class="empty-state"><div class="es-ico">📋</div>No jobs scheduled today.</div>';
+}
+
+function jobCardHTML(j) {
+  const c = clients.find(cl=>cl.id===j.clientId)||{};
+  const taskChips = (j.tasks||[]).map(t=>`<span class="task-chip ${(j.doneTasks||[]).includes(t)?'tc-done':'tc-pending'}" onclick="toggleTask('${j.id}','${t}')">${t}</span>`).join('');
+  const photos = j.photos&&j.photos.length ? `<div style="display:flex;gap:4px;margin-top:8px;">${j.photos.slice(0,4).map(p=>`<img src="${p}" style="width:44px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--border);">`).join('')}</div>` : '';
+  return `<div class="job-card ${j.completed?'done':''}" id="jcard-${j.id}">
+    <div class="jc-check ${j.completed?'on':''}" onclick="toggleComplete('${j.id}')">✓</div>
+    <div class="jc-info">
+      <div class="jc-client">${j.clientName}</div>
+      <div class="jc-addr">📍 ${c.address||j.address||'—'}</div>
+      <div class="jc-tasks">${taskChips}</div>
+      ${j.notes?`<div style="font-size:11px;color:var(--gray);margin-top:6px;">📝 ${j.notes}</div>`:''}
+      ${photos}
+    </div>
+    <div class="jc-actions">
+      <div class="jc-date">${fmtDate(j.date)}</div>
+      <div class="jc-phone">${c.phone||''}</div>
+      <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">Detail</button>
+      <button class="btn btn-outline btn-xs" onclick="quickInvoice('${j.id}')">Invoice</button>
+    </div>
+  </div>`;
+}
+
+function renderUpcoming() {
+  const t = todayStr();
+  const end = addDays(t,7);
+  const items = jobs.filter(j=>j.date>t && j.date<=end && !j.completed).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10);
+  const el = document.getElementById('upcoming-list');
+  if (!items.length) { el.innerHTML='<div class="empty-state"><div class="es-ico">📆</div>Clear for the next 7 days.</div>'; return; }
+  el.innerHTML = items.map(j=>{
+    const d=new Date(j.date+'T12:00:00');
+    const c=clients.find(cl=>cl.id===j.clientId)||{};
+    return `<div class="up-item">
+      <div class="up-datebox"><div class="up-day">${d.getDate()}</div><div class="up-mon">${d.toLocaleString('en-US',{month:'short'})}</div></div>
+      <div class="up-info"><div class="up-client">${j.clientName}</div><div class="up-detail">📍 ${c.address||''} · ${(j.tasks||[]).join(', ')}</div></div>
+      <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">▶</button>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  TODAY'S ROUTE
+// ══════════════════════════════════════════
+function renderRoute() {
+  const t = todayStr();
+  const d = new Date(t+'T12:00:00');
+  document.getElementById('route-date').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const tj = getTodayJobs();
+  const el = document.getElementById('route-stops');
+  if (!tj.length) { el.innerHTML='<div class="empty-state"><div class="es-ico">🗺</div>No stops scheduled today. Add a job to get started.</div>'; return; }
+  el.innerHTML = tj.map((j,i)=>{
+    const c = clients.find(cl=>cl.id===j.clientId)||{};
+    const fullAddr = encodeURIComponent(`${c.address||j.address}, ${c.city||''} ${c.zip||''}`);
+    const mapsUrl = `https://maps.apple.com/?daddr=${fullAddr}`;
+    const taskChips = (j.tasks||[]).map(t=>`<span class="task-chip ${(j.doneTasks||[]).includes(t)?'tc-done':'tc-pending'}" onclick="toggleTask('${j.id}','${t}');renderRoute();">${t}</span>`).join('');
+    return `<div class="route-stop ${j.completed?'done':''}">
+      <div class="route-num">${i+1}</div>
+      <div class="route-info">
+        <div class="route-client">${j.clientName} ${j.completed?'<span style="font-size:11px;color:var(--green);font-weight:700;">✓ Done</span>':''}</div>
+        <div class="route-addr">📍 ${c.address||''}, ${c.city||''} ${c.zip||''}</div>
+        <div style="font-size:12px;color:var(--orange);margin-top:2px;">📞 ${c.phone||'—'}</div>
+        ${c.notes?`<div style="font-size:11px;color:var(--yellow);margin-top:4px;">⚠ ${c.notes}</div>`:''}
+        <div class="route-tasks">${taskChips}</div>
+        ${j.notes?`<div style="font-size:11px;color:var(--gray);margin-top:6px;">📝 ${j.notes}</div>`:''}
+      </div>
+      <div class="route-actions">
+        <a class="maps-btn" href="${mapsUrl}" target="_blank">📍 Directions</a>
+        <button class="btn btn-outline btn-xs" onclick="toggleComplete('${j.id}');renderRoute();">${j.completed?'Reopen':'✓ Done'}</button>
+        <button class="btn btn-outline btn-xs" onclick="quickInvoice('${j.id}')">Invoice</button>
+        <button class="btn btn-outline btn-xs" onclick="openDetail('${j.id}')">Photos/Notes</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAllInMaps() {
+  const tj = getTodayJobs();
+  if (!tj.length) return;
+  const addrs = tj.map(j=>{ const c=clients.find(cl=>cl.id===j.clientId)||{}; return `${c.address||j.address}, ${c.city||''} ${c.zip||''}`; });
+  // Open first stop — Apple Maps doesn't support multi-stop easily from web
+  window.open(`https://maps.apple.com/?daddr=${encodeURIComponent(addrs[0])}`, '_blank');
+  if (addrs.length > 1) showToast(`Opened stop 1 of ${addrs.length}. Use "Next Stop" in Maps for the rest.`);
+}
+
+// ══════════════════════════════════════════
+//  CLIENTS
+// ══════════════════════════════════════════
+let editingClientId = null;
+
+function openClientModal(clientId=null) {
+  editingClientId = clientId;
+  if (clientId) {
+    // EDIT MODE — pre-fill all fields
+    const c = clients.find(cl=>cl.id===clientId);
+    if (!c) return;
+    document.getElementById('client-modal-title').textContent = 'Edit Client';
+    document.getElementById('client-save-btn').textContent = 'Save Changes';
+    document.getElementById('c-first').value  = c.first||'';
+    document.getElementById('c-last').value   = c.last||'';
+    document.getElementById('c-addr').value   = c.address||'';
+    document.getElementById('c-city').value   = c.city||'Iowa City';
+    document.getElementById('c-zip').value    = c.zip||'';
+    document.getElementById('c-phone').value  = c.phone||'';
+    document.getElementById('c-email').value  = c.email||'';
+    document.getElementById('c-rate').value   = c.rate||'';
+    document.getElementById('c-notes').value  = c.notes||'';
+    document.getElementById('c-start').value  = c.start||todayStr();
+    document.getElementById('c-mows').value   = String(c.mows||3);
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>{
+      cb.checked = (c.services||[]).includes(cb.value);
+    });
+  } else {
+    // ADD MODE — clear all fields
+    document.getElementById('client-modal-title').textContent = 'Add New Client';
+    document.getElementById('client-save-btn').textContent = 'Save & Auto-Schedule';
+    ['c-first','c-last','c-addr','c-phone','c-email','c-rate','c-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('c-city').value  = 'Iowa City';
+    document.getElementById('c-zip').value   = '';
+    document.getElementById('c-start').value = todayStr();
+    document.getElementById('c-mows').value  = '3';
+    document.querySelectorAll('#c-svc-grid input').forEach(cb=>cb.checked=false);
+  }
+  openModal('modal-client');
+}
+
+function saveClient() {
+  const first = document.getElementById('c-first').value.trim();
+  const last  = document.getElementById('c-last').value.trim();
+  if (!first) { toast('First name is required.','red'); return; }
+  const svcs  = [...document.querySelectorAll('#c-svc-grid input:checked')].map(cb=>cb.value);
+  const mows  = parseInt(document.getElementById('c-mows').value);
+  const start = document.getElementById('c-start').value || todayStr();
+
+  if (editingClientId) {
+    // UPDATE existing client
+    const idx = clients.findIndex(cl=>cl.id===editingClientId);
+    if (idx === -1) return;
+    const name = last ? `${first} ${last}` : first;
+    clients[idx] = {
+      ...clients[idx],
+      first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs
+    };
+    // Update client name on existing jobs too
+    jobs.forEach(j=>{ if(j.clientId===editingClientId) { j.clientName=name; j.address=clients[idx].address; } });
+    save();
+    closeModal('modal-client');
+    renderClients();
+    renderDashboard();
+    toast(`${name} updated.`);
+  } else {
+    // ADD new client
+    const name = last ? `${first} ${last}` : first;
+    const c = {
+      id:uid(), first, last, name,
+      address: document.getElementById('c-addr').value.trim(),
+      city:    document.getElementById('c-city').value.trim(),
+      zip:     document.getElementById('c-zip').value.trim(),
+      phone:   document.getElementById('c-phone').value.trim(),
+      email:   document.getElementById('c-email').value.trim(),
+      rate:    document.getElementById('c-rate').value,
+      notes:   document.getElementById('c-notes').value.trim(),
+      mows, start, services:svcs, active:true
+    };
+    clients.push(c);
+    const dates = autoSchedule(start, mows);
+    dates.forEach(d => jobs.push({
+      id:uid(), clientId:c.id, clientName:c.name, address:c.address,
+      date:d, tasks:svcs.length?svcs:['Mow'], doneTasks:[], completed:false,
+      notes:'', photos:[], amount:c.rate||0, invoiced:false
+    }));
+    save();
+    closeModal('modal-client');
+    renderDashboard();
+    renderClients();
+    toast(`${c.name} added — ${dates.length} visit${dates.length!==1?'s':''} auto-scheduled.`);
+  }
+}
+
+function renderClients() {
+  const tbody = document.getElementById('clients-tbody');
+  if (!clients.length) { tbody.innerHTML='<tr><td colspan="7" class="empty-state">No clients yet.</td></tr>'; return; }
+  const t = todayStr();
+  // Sort alphabetically by name
+  const sorted = [...clients].sort((a,b)=>a.name.localeCompare(b.name));
+  tbody.innerHTML = sorted.map(c=>{
+    const next = jobs.filter(j=>j.clientId===c.id && j.date>=t && !j.completed).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    const owed = invoices.filter(i=>i.clientId===c.id&&!i.paid).reduce((s,i)=>s+(parseFloat(i.total)||0),0);
+    return `<tr>
+      <td>
+        <strong style="cursor:pointer;color:var(--white);" onclick="openClientModal('${c.id}')">${c.name}</strong>
+        ${c.notes?`<br><span style="font-size:11px;color:var(--yellow);">⚠ ${c.notes.substring(0,50)}</span>`:''}
+      </td>
+      <td>
+        ${c.address||'<span style="color:var(--gray);">—</span>'}
+        <br><span style="font-size:11px;color:var(--gray);">${c.city||''} ${c.zip||''}</span>
+      </td>
+      <td>
+        <span style="color:var(--orange);">${c.phone||'<span style="color:var(--gray);">—</span>'}</span>
+        <br><span style="font-size:11px;color:var(--gray);">${c.email||''}</span>
+      </td>
+      <td style="max-width:140px;">${(c.services||[]).map(s=>`<span class="badge b-gray" style="margin:1px;font-size:10px;">${s}</span>`).join('') || '<span style="color:var(--gray);font-size:12px;">None set</span>'}</td>
+      <td>${next?fmtDate(next.date):'<span style="color:var(--gray);">—</span>'}</td>
+      <td>${owed>0?`<span style="color:var(--red);font-weight:700;">$${owed.toFixed(2)}</span>`:`<span style="color:var(--green);">$0.00</span>`}</td>
+      <td style="white-space:nowrap;display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-xs" onclick="openClientModal('${c.id}')">✏ Edit</button>
+        <button class="btn btn-outline btn-xs" onclick="quickInvoice(null,'${c.id}')">Invoice</button>
+        <button class="btn btn-red btn-xs" onclick="deleteClient('${c.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteClient(id) {
+  if (!confirm('Remove this client and all their jobs?')) return;
+  clients = clients.filter(c=>c.id!==id);
+  jobs    = jobs.filter(j=>j.clientId!==id);
+  save(); renderClients(); renderDashboard(); toast('Client removed.');
+}
+
+function searchClients(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('#clients-tbody tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');
+}
+
+// ══════════════════════════════════════════
+//  JOBS
+// ══════════════════════════════════════════
+function openJobModal(date=null) {
+  editJobId = null; jobPhotos = [];
+  document.getElementById('job-modal-title').textContent = 'Add Job';
+  document.getElementById('j-client').innerHTML = '<option value="">Select client...</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('j-date').value = date||todayStr();
+  document.getElementById('j-notes').value = '';
+  document.getElementById('j-amount').value = '';
+  document.getElementById('j-addr-block').style.display = 'none';
+  document.getElementById('j-photo-grid').innerHTML = '';
+  document.querySelectorAll('#j-task-grid input').forEach(cb=>cb.checked=false);
+  openModal('modal-job');
+}
+
+function onJobClientChange() {
+  const id = document.getElementById('j-client').value;
+  const c = clients.find(cl=>cl.id===id);
+  if (!c) { document.getElementById('j-addr-block').style.display='none'; return; }
+  document.getElementById('j-addr-val').textContent = `${c.address}, ${c.city} ${c.zip}`;
+  document.getElementById('j-addr-block').style.display = '';
+  document.getElementById('j-amount').value = c.rate||'';
+  document.querySelectorAll('#j-task-grid input').forEach(cb=>cb.checked=false);
+  (c.services||[]).forEach(s=>{ document.querySelectorAll('#j-task-grid input').forEach(cb=>{ if(cb.value===s) cb.checked=true; }); });
+}
+
+function saveJob() {
+  const clientId = document.getElementById('j-client').value;
+  const date     = document.getElementById('j-date').value;
+  if (!clientId||!date) { toast('Select a client and date.','red'); return; }
+  const c = clients.find(cl=>cl.id===clientId)||{};
+  const tasks = [...document.querySelectorAll('#j-task-grid input:checked')].map(cb=>cb.value);
+  const job = {
+    id: editJobId||uid(), clientId, clientName:c.name, address:c.address,
+    date, tasks, doneTasks:[], completed:false,
+    notes: document.getElementById('j-notes').value.trim(),
+    photos: jobPhotos.slice(),
+    amount: document.getElementById('j-amount').value||0,
+    invoiced: false
+  };
+  if (editJobId) { const i=jobs.findIndex(j=>j.id===editJobId); if(i>-1) jobs[i]={...jobs[i],...job}; }
+  else jobs.push(job);
+  save(); closeModal('modal-job'); renderDashboard(); renderCalendar(); toast('Job saved.');
+}
+
+function toggleComplete(jobId) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  j.completed = !j.completed;
+  if (j.completed) j.doneTasks = [...(j.tasks||[])];
+  save(); renderDashboard();
+  toast(j.completed?'Job marked complete!':'Job reopened.');
+}
+
+function toggleTask(jobId, task) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  if (!j.doneTasks) j.doneTasks=[];
+  const i = j.doneTasks.indexOf(task);
+  if (i>-1) j.doneTasks.splice(i,1); else j.doneTasks.push(task);
+  if (j.doneTasks.length===(j.tasks||[]).length) j.completed=true;
+  save(); renderDashboard();
+}
+
+// ══════════════════════════════════════════
+//  JOB DETAIL
+// ══════════════════════════════════════════
+function openDetail(jobId) {
+  const j = jobs.find(jb=>jb.id===jobId);
+  if (!j) return;
+  const c = clients.find(cl=>cl.id===j.clientId)||{};
+  document.getElementById('det-title').textContent = `${j.clientName} — ${fmtDate(j.date)}`;
+  document.getElementById('det-body').innerHTML = `
+    <div class="frow" style="margin-bottom:14px;">
+      <div><div class="flbl">Address</div><div>${c.address||'—'}</div><div style="font-size:12px;color:var(--gray);">${c.city||''} ${c.zip||''}</div></div>
+      <div><div class="flbl">Contact</div><div style="color:var(--orange);">${c.phone||'—'}</div><div style="font-size:12px;color:var(--gray);">${c.email||''}</div></div>
+    </div>
+    ${c.notes?`<div style="background:rgba(243,156,18,.1);border:1px solid var(--yellow);border-radius:7px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--yellow);">⚠ <strong>Note:</strong> ${c.notes}</div>`:''}
+    <div class="flbl">Tasks</div>
+    <div class="task-grid" style="margin-bottom:14px;">${(j.tasks||[]).map(t=>`
+      <div class="tci ${(j.doneTasks||[]).includes(t)?'on':''}" onclick="toggleTask('${j.id}','${t}');openDetail('${j.id}');">
+        <input type="checkbox" ${(j.doneTasks||[]).includes(t)?'checked':''}> <label>${t}</label>
+      </div>`).join('')}
+    </div>
+    <div class="flbl">Amount</div>
+    <div style="font-size:20px;font-weight:800;color:var(--orange);margin-bottom:14px;">$${parseFloat(j.amount||0).toFixed(2)}</div>
+    ${j.notes?`<div class="flbl">Work Notes</div><div style="font-size:13px;color:var(--gray-light);margin-bottom:14px;line-height:1.6;">${j.notes}</div>`:''}
+    ${j.photos&&j.photos.length?`<div class="flbl">Photos (${j.photos.length})</div><div class="photo-grid">${j.photos.map(p=>`<img src="${p}" class="photo-img">`).join('')}</div>`:''}
+    <div style="margin-top:14px;"><span class="badge ${j.completed?'b-green':'b-yellow'}">${j.completed?'Complete':'Pending'}</span></div>`;
+  document.getElementById('det-done-btn').textContent = j.completed?'Reopen Job':'Mark Complete';
+  document.getElementById('det-done-btn').onclick = ()=>{ toggleComplete(j.id); openDetail(j.id); };
+  document.getElementById('det-inv-btn').onclick = ()=>{ closeModal('modal-detail'); quickInvoice(j.id); };
+  openModal('modal-detail');
+}
+
+// ══════════════════════════════════════════
+//  PHOTOS
+// ══════════════════════════════════════════
+function handlePhotos(input) {
+  [...input.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{ jobPhotos.push(e.target.result); renderPhotoGrid(); };
+    r.readAsDataURL(f);
+  });
+}
+function renderPhotoGrid() {
+  document.getElementById('j-photo-grid').innerHTML = jobPhotos.map((p,i)=>`
+    <div class="photo-wrap"><img src="${p}" class="photo-img"><button class="photo-del" onclick="jobPhotos.splice(${i},1);renderPhotoGrid();">✕</button></div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════
+function renderCalendar() {
+  document.getElementById('cal-label').textContent = `${monthName(calMonth)} ${calYear}`;
+  const first = new Date(calYear,calMonth,1).getDay();
+  const dim   = new Date(calYear,calMonth+1,0).getDate();
+  const prev  = new Date(calYear,calMonth,0).getDate();
+  const t = todayStr();
+  let html = '';
+  const total = Math.ceil((first+dim)/7)*7;
+  for (let i=0;i<total;i++) {
+    let day,ds,other=false;
+    if (i<first) { day=prev-first+i+1; other=true; const m=String(calMonth).padStart(2,'0'); ds=`${calYear}-${m}-${String(day).padStart(2,'0')}`; }
+    else if (i>=first+dim) { day=i-first-dim+1; other=true; const m=String(calMonth+2).padStart(2,'0'); ds=`${calYear}-${m}-${String(day).padStart(2,'0')}`; }
+    else { day=i-first+1; ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; }
+    const isToday=ds===t;
+    const dayJobs=jobs.filter(j=>j.date===ds);
+    const evs=dayJobs.slice(0,3).map(j=>{
+      const hasMow=(j.tasks||[]).includes('Mow');
+      const hasGut=(j.tasks||[]).includes('Gutters');
+      const hasLand=(j.tasks||[]).includes('Landscape');
+      const cls=hasGut?'ev-gutter':hasLand?'ev-landscape':'ev-mow';
+      return `<div class="cal-ev ${cls} ${j.completed?'ev-done':''}" onclick="openDetail('${j.id}')">${j.clientName.split(' ')[0]}</div>`;
+    }).join('') + (dayJobs.length>3?`<div style="font-size:10px;color:var(--gray);">+${dayJobs.length-3}</div>`:'');
+    html+=`<div class="cal-cell ${other?'other':''} ${isToday?'today':''}" ondblclick="openJobModal('${ds}')">
+      <div class="cal-date-num">${day}</div>${evs}</div>`;
+  }
+  document.getElementById('cal-cells').innerHTML = html;
+}
+function changeMonth(d) { calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+
+// ══════════════════════════════════════════
+//  INVOICES
+// ══════════════════════════════════════════
+function openInvoiceSelectModal() {
+  const sel = document.getElementById('inv-client-sel');
+  sel.innerHTML = '<option value="">Choose client...</option>' + clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.onchange = function() {
+    const id = this.value;
+    const wrap = document.getElementById('inv-job-sel-wrap');
+    if (!id) { wrap.style.display='none'; return; }
+    const cJobs = jobs.filter(j=>j.clientId===id);
+    if (!cJobs.length) { wrap.style.display='none'; return; }
+    wrap.style.display='';
+    document.getElementById('inv-job-list').innerHTML = cJobs.map(j=>`
+      <div class="tci" style="margin-bottom:6px;">
+        <input type="checkbox" id="ij-${j.id}" value="${j.id}" ${j.completed?'checked':''}>
+        <label for="ij-${j.id}">${fmtDate(j.date)} — ${(j.tasks||[]).join(', ')} — $${parseFloat(j.amount||0).toFixed(2)} ${j.invoiced?'<span style="color:var(--yellow);font-size:10px;">(already invoiced)</span>':''}</label>
+      </div>`).join('');
+  };
+  document.getElementById('inv-note').value='Thank you for your business!';
+  openModal('modal-inv-select');
+}
+
+function generateInvoiceFromSelect() {
+  const clientId = document.getElementById('inv-client-sel').value;
+  if (!clientId) { toast('Select a client.','red'); return; }
+  const selectedJobIds = [...document.querySelectorAll('#inv-job-list input:checked')].map(cb=>cb.value);
+  const c = clients.find(cl=>cl.id===clientId)||{};
+  const selectedJobs = jobs.filter(j=>selectedJobIds.includes(j.id));
+  const total = selectedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const note = document.getElementById('inv-note').value;
+  const invId = uid();
+  const inv = { id:invId, clientId, clientName:c.name, date:todayStr(), jobIds:selectedJobIds, total, paid:false, note };
+  invoices.push(inv);
+  selectedJobs.forEach(j=>{ j.invoiced=true; });
+  currentInvId = invId;
+  save();
+  closeModal('modal-inv-select');
+  buildInvoiceHTML(inv, c, selectedJobs);
+  openModal('modal-invoice');
+}
+
+function quickInvoice(jobId, clientIdOverride=null) {
+  let c, jobList;
+  if (jobId) {
+    const j = jobs.find(jb=>jb.id===jobId);
+    if (!j) return;
+    c = clients.find(cl=>cl.id===j.clientId)||{};
+    jobList = [j];
+  } else {
+    c = clients.find(cl=>cl.id===clientIdOverride)||{};
+    jobList = jobs.filter(j=>j.clientId===clientIdOverride);
+  }
+  const total = jobList.reduce((s,j)=>s+(parseFloat(j.amount)||0),0);
+  const invId = uid();
+  const inv = { id:invId, clientId:c.id, clientName:c.name, date:todayStr(), jobIds:jobList.map(j=>j.id), total, paid:false, note:'Thank you for your business!' };
+  invoices.push(inv);
+  jobList.forEach(j=>j.invoiced=true);
+  currentInvId = invId;
+  save();
+  buildInvoiceHTML(inv, c, jobList);
+  openModal('modal-invoice');
+}
+
+function buildInvoiceHTML(inv, c, jobList) {
+  const num = 'COJ-' + String(invoices.findIndex(i=>i.id===inv.id)+1).padStart(4,'0');
+  const dueDate = addDays(inv.date, 14);
+  const rows = jobList.map(j=>`<tr><td>${(j.tasks||[]).join(', ')}</td><td>${fmtDate(j.date)}</td><td style="text-align:right;">$${parseFloat(j.amount||0).toFixed(2)}</td></tr>`).join('');
+  const methods = BIZ.payment.map(m=>`<span class="inv-pay-pill">${m}</span>`).join('');
+  document.getElementById('inv-content').innerHTML = `
+    <div class="inv-top">
+      <div>
+        <div class="inv-brand-name">Clark's Odd Jobs LLC</div>
+        <div class="inv-tagline">⭐ Veteran-Owned Home Services · Iowa City, Iowa</div>
+        <div class="inv-contact">
+          📞 ${BIZ.phone}<br>
+          ✉ ${BIZ.email}<br>
+          🌐 ${BIZ.web}
+        </div>
+      </div>
+      <div class="inv-meta">
+        <strong>INVOICE</strong><br>
+        #${num}<br>
+        Date: ${fmtDate(inv.date)}<br>
+        Due: ${fmtDate(dueDate)}
+      </div>
+    </div>
+    <div class="inv-bill">
+      <div class="inv-bill-lbl">Bill To</div>
+      <div class="inv-bill-name">${c.name||'Client'}</div>
+      <div style="font-size:12px;color:#555;margin-top:4px;line-height:1.7;">${c.address||''}<br>${c.city||''} ${c.zip||''}<br>${c.phone||''}</div>
+    </div>
+    <table class="inv-table">
+      <thead><tr><th>Service</th><th>Date</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>${rows}<tr class="total-row"><td colspan="2">Total Due</td><td style="text-align:right;">$${parseFloat(inv.total||0).toFixed(2)}</td></tr></tbody>
+    </table>
+    <div class="inv-pay">
+      <div class="inv-pay-title">💳 Payment Methods Accepted</div>
+      <div class="inv-pay-methods">${methods}</div>
+      <div style="font-size:11px;color:#777;margin-top:8px;">Payment due within 14 days · Questions? Call or text ${BIZ.phone}</div>
+    </div>
+    <div class="inv-footer">
+      ${inv.note||''}<br>
+      <span class="inv-vet">★ VETERAN-OWNED BUSINESS</span><br>
+      ${BIZ.name} · ${BIZ.phone} · ${BIZ.email} · ${BIZ.web}
+    </div>`;
+}
+
+function copyInvoice() {
+  const text = document.getElementById('inv-content').innerText;
+  navigator.clipboard.writeText(text).then(()=>toast('Invoice copied to clipboard — paste anywhere.'));
+}
+
+function markCurrentPaid() {
+  const inv = invoices.find(i=>i.id===currentInvId);
+  if (inv) { inv.paid=true; save(); closeModal('modal-invoice'); renderInvoices(); renderDashboard(); toast('Invoice marked as paid!'); }
+}
+
+function renderInvoices() {
+  const tbody = document.getElementById('inv-tbody');
+  if (!invoices.length) { tbody.innerHTML='<tr><td colspan="6" class="empty-state">No invoices yet.</td></tr>'; return; }
+  tbody.innerHTML = [...invoices].reverse().map((inv,ri)=>{
+    const num='COJ-'+String(invoices.length-ri).padStart(4,'0');
+    return `<tr>
+      <td><strong>${num}</strong></td>
+      <td>${inv.clientName}</td>
+      <td>${fmtDate(inv.date)}</td>
+      <td><strong>$${parseFloat(inv.total||0).toFixed(2)}</strong></td>
+      <td><span class="badge ${inv.paid?'b-green':'b-red'}">${inv.paid?'Paid':'Unpaid'}</span></td>
+      <td style="white-space:nowrap;display:flex;gap:5px;">
+        ${!inv.paid?`<button class="btn btn-green btn-xs" onclick="markPaidById('${inv.id}')">Paid</button>`:''}
+        <button class="btn btn-outline btn-xs" onclick="viewInvoiceById('${inv.id}')">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function markPaidById(id) {
+  const inv=invoices.find(i=>i.id===id);
+  if(inv){inv.paid=true;save();renderInvoices();renderDashboard();toast('Marked as paid!');}
+}
+
+function viewInvoiceById(id) {
+  const inv = invoices.find(i=>i.id===id);
+  if(!inv) return;
+  currentInvId = id;
+  const c = clients.find(cl=>cl.id===inv.clientId)||{};
+  const jl = jobs.filter(j=>(inv.jobIds||[]).includes(j.id));
+  buildInvoiceHTML(inv, c, jl.length?jl:[{tasks:['Services'],date:inv.date,amount:inv.total}]);
+  openModal('modal-invoice');
+}
+
+// ══════════════════════════════════════════
+//  GOOGLE SHEETS
+// ══════════════════════════════════════════
+
+// ── HARDCODED — works on every device automatically ──
+const SHEETS_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbyUFONMpPcx6DksbXTCwhv2LJOzng-0Xuxn2nDiN84zsaBmrEXzavC4kVfiJD3TN3oG/exec';
+
+function getSheetsURL() {
+  // Use saved URL if set, otherwise fall back to hardcoded default
+  return localStorage.getItem('coj_sheets_url') || SHEETS_URL_DEFAULT;
+}
+
+function saveSheetURL() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (url) {
+    localStorage.setItem('coj_sheets_url', url);
+    toast('Sheets URL saved.');
+  } else {
+    // Reset to default
+    localStorage.removeItem('coj_sheets_url');
+    document.getElementById('sheets-url').value = SHEETS_URL_DEFAULT;
+    toast('Reset to default URL.');
+  }
+}
+
+async function testSync() {
+  const url = getSheetsURL();
+  document.getElementById('sheets-url').value = url;
+  try {
+    await fetch(url+'?action=ping',{method:'GET',mode:'no-cors'});
+    toast('Ping sent — check your Google Sheet.');
+  } catch(e) { toast('Connection failed. Check URL.','red'); }
+}
+
+async function syncAllNow() {
+  toast('Syncing all data to Google Sheets...');
+  await pushToSheets(true);
+  toast('Sync complete! Check your Google Sheet.');
+}
+
+async function pushToSheets(all=false) {
+  const url = getSheetsURL();
+  try {
+    const payload = {
+      action: 'sync',
+      clients,
+      jobs: all ? jobs : jobs.slice(-300),
+      invoices: all ? invoices : invoices.slice(-100)
+    };
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload),
+      headers: {'Content-Type':'application/json'}
+    });
+  } catch(e) { console.log('Sheets sync error:', e); }
+}
+
+function downloadAppsScript() {
+  const gs = `// Clark's Odd Jobs — Google Apps Script Backend
+// Paste into Extensions > Apps Script in your Google Sheet, then Deploy as Web App
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (data.action === 'sync') {
+      syncSheet(ss, 'Clients', ['ID','Name','Address','City','ZIP','Phone','Email','Rate','Services','Notes','Start','Active'],
+        data.clients.map(c=>[c.id,c.name,c.address,c.city,c.zip,c.phone,c.email,c.rate,(c.services||[]).join(', '),c.notes,c.start,c.active]));
+      syncSheet(ss, 'Jobs', ['ID','Client','Address','Date','Tasks','Complete','Amount','Notes','Invoiced'],
+        data.jobs.map(j=>[j.id,j.clientName,j.address,j.date,(j.tasks||[]).join(', '),j.completed,j.amount,j.notes,j.invoiced]),
+        {6:j=>j.completed, 9:j=>j.invoiced});
+      syncSheet(ss, 'Invoices', ['ID','Client','Date','Total','Paid'],
+        data.invoices.map(i=>[i.id,i.clientName,i.date,i.total,i.paid]));
+    }
+    return ok();
+  } catch(e) { return ContentService.createTextOutput(JSON.stringify({status:'error',msg:e.toString()})).setMimeType(ContentService.MimeType.JSON); }
+}
+
+function syncSheet(ss, name, headers, rows, updateCols) {
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (sh.getLastRow() < 1) sh.appendRow(headers);
+  const existingIds = sh.getLastRow()>1 ? sh.getRange(2,1,sh.getLastRow()-1,1).getValues().flat() : [];
+  rows.forEach(row => {
+    const idx = existingIds.indexOf(row[0]);
+    if (idx < 0) sh.appendRow(row);
+    else if (updateCols) {
+      Object.keys(updateCols).forEach(col => sh.getRange(idx+2,parseInt(col)).setValue(row[parseInt(col)-1]));
+    }
+  });
+}
+
+function doGet(e) { return ok(); }
+function ok() { return ContentService.createTextOutput(JSON.stringify({status:'ok'})).setMimeType(ContentService.MimeType.JSON); }`;
+  const blob = new Blob([gs],{type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ClarksOddJobs_AppsScript.gs';
+  a.click();
+  toast('Apps Script file downloaded.');
+}
+
+// ══════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el=>el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); }));
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function toast(msg, type='green') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = type==='red'?'var(--red)':'var(--green)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  // Pre-fill sheets URL field with saved or default
+  document.getElementById('sheets-url').value = getSheetsURL();
+  renderDashboard();
+  renderCalendar();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+init();
+</script>
+
+<script>
+// ── HARDCODED CONTACTS — loaded on every device ──
+(function() {
+  const SEED_VERSION = 'v3';
+  const seeded = localStorage.getItem('coj_seed_version');
+  if (seeded === SEED_VERSION) return; // already loaded this version
+
+  const existing = JSON.parse(localStorage.getItem('coj_clients') || '[]');
+  const seeded_contacts = [{"id": "tgba25qyzy", "first": "Jay", "last": "Moon", "name": "Jay Moon", "address": "3724 Lower West Branch Rd", "city": "Iowa City", "zip": "52245", "phone": "253-209-3882", "email": "jaymoon012@outlook.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "8x3qbexs9b", "first": "Diego", "last": "Strebb", "name": "Diego Strebb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-541-3759", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "tpksmsex4w", "first": "Uriel", "last": "", "name": "Uriel", "address": "", "city": "Iowa City", "zip": "", "phone": "319-331-6726", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "i41ih8hoqr", "first": "Robert", "last": "Morey", "name": "Robert Morey", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "robtmorey@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "umg125td8s", "first": "Susan", "last": "Quinn", "name": "Susan Quinn", "address": "", "city": "Iowa City", "zip": "", "phone": "319-000-0000", "email": "suz@mchsi.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "te9yajvi8z", "first": "Move Sunday", "last": "Genie", "name": "Move Sunday Genie", "address": "", "city": "Iowa City", "zip": "", "phone": "319-512-1793", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "c16qul0q84", "first": "D", "last": "Fraise", "name": "D Fraise", "address": "215 E Washington St", "city": "Washington", "zip": "52353", "phone": "319-653-2256", "email": "dfraise@washingtoniowa.gov", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "b80jtwscin", "first": "Girish", "last": "", "name": "Girish", "address": "929 Tipperary Rd", "city": "Iowa City", "zip": "52246", "phone": "319-594-9320", "email": "ghmhatre@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "50i07mncy4", "first": "Josie Vre", "last": "Strodman", "name": "Josie Vre Strodman", "address": "", "city": "Iowa City", "zip": "", "phone": "515-868-3348", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "0zybwu28vj", "first": "Timothy", "last": "Leimbach", "name": "Timothy Leimbach", "address": "1515 Ridge Street", "city": "Iowa City", "zip": "", "phone": "", "email": "timothyleimbach907@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "3vmjrhp5h3", "first": "Ryan", "last": "Scott", "name": "Ryan Scott", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "wixpartnerwixpartner@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "gx0433r90y", "first": "Barbara", "last": "Bradac", "name": "Barbara Bradac", "address": "627 Larch Lane", "city": "Iowa City", "zip": "", "phone": "319-400-9060", "email": "barbarabradac@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "nn5otfugls", "first": "Wayne", "last": "Wyman", "name": "Wayne Wyman", "address": "72 Gleason Drive", "city": "Iowa City", "zip": "52240", "phone": "919-961-6211", "email": "ww.wyman@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lew6iwc8av", "first": "Pascal", "last": "", "name": "Pascal", "address": "1029 Market St", "city": "Iowa City", "zip": "", "phone": "949-502-1049", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "p18agp1z0i", "first": "Larry", "last": "Goemaat", "name": "Larry Goemaat", "address": "123 Penfro", "city": "Iowa City", "zip": "", "phone": "319-555-1212", "email": "roper1951@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "kla3cb27dk", "first": "Milo", "last": "Streb", "name": "Milo Streb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-325-8867", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "cqkmkhsujx", "first": "Miss O", "last": "", "name": "Miss O", "address": "", "city": "Iowa City", "zip": "", "phone": "319-330-4737", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "nwmag2op1v", "first": "Paskell Jim", "last": "Hess", "name": "Paskell Jim Hess", "address": "1029 E Market Street", "city": "Iowa City", "zip": "", "phone": "949-502-1049", "email": "j2hess@sbcglobal.net", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "kd3190gkr2", "first": "Sally", "last": "Stange", "name": "Sally Stange", "address": "751 7th St", "city": "Iowa City", "zip": "", "phone": "319-331-0896", "email": "stangesally@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "2km69sj47c", "first": "Justin", "last": "Brame", "name": "Justin Brame", "address": "1875 Silver Maple Trail", "city": "Iowa City", "zip": "", "phone": "563-357-8863", "email": "justintbrame@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rurpa6v9hx", "first": "Gail", "last": "Stika", "name": "Gail Stika", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gstika@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "3d50y2kdqo", "first": "Meadowlark", "last": "POIICA", "name": "Meadowlark POIICA", "address": "2601-2661 Lakeside Apartments", "city": "Iowa City", "zip": "", "phone": "734-233-7707", "email": "kadarnathm@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ywvh38m6wn", "first": "Serinna", "last": "Cfr", "name": "Serinna Cfr", "address": "", "city": "Iowa City", "zip": "", "phone": "515-808-0666", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "w5ppud0l18", "first": "Pascale", "last": "Hess", "name": "Pascale Hess", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "hesspg@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ckapgedg3q", "first": "Santhi", "last": "", "name": "Santhi", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "subjectsh@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "x4cekgyb3k", "first": "Max", "last": "Schoonover", "name": "Max Schoonover", "address": "", "city": "Iowa City", "zip": "", "phone": "701-380-2708", "email": "hawkeye0141@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "xis2j0zwi6", "first": "Lisa", "last": "Morgan", "name": "Lisa Morgan", "address": "3412 Arbor Drive", "city": "Iowa City", "zip": "", "phone": "319-530-7243", "email": "emorgan8904@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "3r9iuk1fl8", "first": "Israel", "last": "", "name": "Israel", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "israemore332@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "b0xeacbfid", "first": "Korina", "last": "", "name": "Korina", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "kjsteinbergs@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "qzr9j5o1q0", "first": "Judy", "last": "Pfohl", "name": "Judy Pfohl", "address": "", "city": "Iowa City", "zip": "", "phone": "319-351-1684", "email": "judypfohl@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "f1wa1yc0pm", "first": "Family", "last": "Trucking", "name": "Family Trucking", "address": "", "city": "Iowa City", "zip": "", "phone": "531-395-5656", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "960rw53ll6", "first": "Freida", "last": "", "name": "Freida", "address": "", "city": "Iowa City", "zip": "", "phone": "678-760-6147", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "7xbgc3tvnp", "first": "Brett", "last": "Streb", "name": "Brett Streb", "address": "", "city": "Iowa City", "zip": "", "phone": "319-721-1538", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "lsaeemolf9", "first": "Mary", "last": "Cross", "name": "Mary Cross", "address": "1728 F Street", "city": "Iowa City", "zip": "", "phone": "", "email": "marythomancross@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "6qkdpqi6uu", "first": "Phillip", "last": "Kilcrease", "name": "Phillip Kilcrease", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "phillipkilcrease@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "tker6qvp4w", "first": "Charlie", "last": "Christie", "name": "Charlie Christie", "address": "", "city": "Iowa City", "zip": "", "phone": "319-530-9818", "email": "tymephotog@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ps0k0jmc0z", "first": "Streb", "last": "Ivan", "name": "Streb Ivan", "address": "", "city": "Iowa City", "zip": "", "phone": "832-382-3015", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "czr91gnsrq", "first": "Susan", "last": "Denneny", "name": "Susan Denneny", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "sdenneny39@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "h8rt8c8t5q", "first": "Tricia", "last": "Stiles", "name": "Tricia Stiles", "address": "722 Oakland Ave", "city": "Iowa City", "zip": "", "phone": "319-321-1439", "email": "triciastiles57@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "yq9ha2sq7x", "first": "Jon", "last": "Fisher", "name": "Jon Fisher", "address": "944 Miller Ave", "city": "Iowa City", "zip": "52246", "phone": "313-330-9938", "email": "jonfisher4520@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "b0cfuzd6l4", "first": "Dan", "last": "Gale", "name": "Dan Gale", "address": "", "city": "Iowa City", "zip": "", "phone": "319-573-6326", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "i1pbh4wu6v", "first": "Jared", "last": "Donze", "name": "Jared Donze", "address": "2107 14th St", "city": "Iowa City", "zip": "", "phone": "319-530-5453", "email": "jgd5150@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "zt8ssyh8vi", "first": "Becky", "last": "Smith", "name": "Becky Smith", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "rebeccaliedersmith@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "03kwaa84el", "first": "David", "last": "Vahle", "name": "David Vahle", "address": "733 Mormon Trek Blvd", "city": "Iowa City", "zip": "52246", "phone": "319-325-8113", "email": "hello@navigatehomesiowa.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "p5403w0tiu", "first": "Sherry", "last": "Mysak", "name": "Sherry Mysak", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "sjm_52402@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "yv7xc14279", "first": "Cristi", "last": "Gleason", "name": "Cristi Gleason", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gleason44@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "v9e6c5past", "first": "Dawn", "last": "Pawlowski", "name": "Dawn Pawlowski", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "sdbpast@hotmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "587cjzwqpl", "first": "Gayle", "last": "Hughes", "name": "Gayle Hughes", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "gaylehughes5@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "hsliaqtlvc", "first": "Jeff", "last": "Terpstra", "name": "Jeff Terpstra", "address": "80 Ealing Drive", "city": "Iowa City", "zip": "", "phone": "319-321-7560", "email": "jlterps@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "uy0ggxedsx", "first": "Keith", "last": "Less", "name": "Keith Less", "address": "1699 Oaklake Park Rd", "city": "Iowa City", "zip": "", "phone": "", "email": "krless@mchsi.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "pe23wnugpi", "first": "Shelly", "last": "Schneider", "name": "Shelly Schneider", "address": "", "city": "Iowa City", "zip": "", "phone": "913-617-7673", "email": "tadbit07@att.net", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "8ktkzmic6g", "first": "Bob", "last": "Wickham", "name": "Bob Wickham", "address": "927 Hudson Ave", "city": "Iowa City", "zip": "", "phone": "319-834-0282", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "prjviirh7r", "first": "Rob", "last": "", "name": "Rob", "address": "1421 Keokuk St", "city": "Iowa City", "zip": "", "phone": "319-621-6505", "email": "rob@ghabel.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "hyjl7eau7u", "first": "Joe", "last": "Screen", "name": "Joe Screen", "address": "", "city": "Iowa City", "zip": "", "phone": "563-503-1959", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "2q52afwjhk", "first": "Elizabeth", "last": "Hecker", "name": "Elizabeth Hecker", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "lizhecker@yahoo.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "txawplkagt", "first": "Casey", "last": "Westhoff", "name": "Casey Westhoff", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "caseywesthoff1@msn.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "axv3233jdi", "first": "Tucker", "last": "Kemp", "name": "Tucker Kemp", "address": "", "city": "Iowa City", "zip": "", "phone": "319-325-3282", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "vqsywkzz2v", "first": "Susan", "last": "Eynon", "name": "Susan Eynon", "address": "", "city": "Iowa City", "zip": "", "phone": "301-537-8298", "email": "seynonlark@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "iley6rmgoc", "first": "Jan", "last": "Barnholdt", "name": "Jan Barnholdt", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "barnholdtj@aol.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "7srsvwnjgc", "first": "Diana", "last": "Childress", "name": "Diana Childress", "address": "2017 9th Avenue", "city": "Iowa City", "zip": "", "phone": "319-325-4164", "email": "1dichildress@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "vpjpegs8ap", "first": "Jennifer", "last": "Bedet", "name": "Jennifer Bedet", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "jenbedet@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "2j13drm3sr", "first": "Maria", "last": "C", "name": "Maria C", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "angelgotch@me.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "gt7vze5lev", "first": "Fatima", "last": "", "name": "Fatima", "address": "", "city": "Iowa City", "zip": "", "phone": "319-512-6601", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "cxr4rwdyyr", "first": "Robin", "last": "Enfield", "name": "Robin Enfield", "address": "", "city": "Iowa City", "zip": "", "phone": "319-321-1335", "email": "robin-enfield@uiowa.edu", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "l1dpdb821x", "first": "Donald", "last": "Leedy", "name": "Donald Leedy", "address": "1311 High Street", "city": "Iowa City", "zip": "", "phone": "737-361-9903", "email": "donaldleedy87@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "et80krbwa6", "first": "Kizzy", "last": "Davies", "name": "Kizzy Davies", "address": "911 Prairie View Dr", "city": "West Branch", "zip": "52358", "phone": "312-307-3775", "email": "kizzydavies10@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "e6n58tc771", "first": "Jerry", "last": "Ward", "name": "Jerry Ward", "address": "", "city": "Iowa City", "zip": "", "phone": "515-635-9886", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "wpbddya2vk", "first": "Jill", "last": "Bly", "name": "Jill Bly", "address": "", "city": "Iowa City", "zip": "", "phone": "", "email": "jillbly1@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "qfr9tewifr", "first": "Twaun", "last": "", "name": "Twaun", "address": "", "city": "Iowa City", "zip": "", "phone": "563-296-1083", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "ihr0uo5yzd", "first": "Jordan", "last": "Spahr", "name": "Jordan Spahr", "address": "", "city": "Iowa City", "zip": "", "phone": "319-423-4139", "email": "kwcric@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "k3gw6pey78", "first": "Fatima", "last": "Nighbor", "name": "Fatima Nighbor", "address": "", "city": "Iowa City", "zip": "", "phone": "563-635-6418", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "6py0lzq7tr", "first": "Management", "last": "Company", "name": "Management Company", "address": "", "city": "Iowa City", "zip": "", "phone": "330-854-5865", "email": "vcook1439@gmail.com", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "rjvgq9w6rz", "first": "Lake Shore", "last": "Recycling", "name": "Lake Shore Recycling", "address": "", "city": "Iowa City", "zip": "", "phone": "630-204-4107", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "gxbmayb64h", "first": "Turf Masters", "last": "Lawn", "name": "Turf Masters Lawn", "address": "", "city": "Iowa City", "zip": "", "phone": "319-271-3465", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "4eyug3p57e", "first": "Fast City", "last": "", "name": "Fast City", "address": "", "city": "Iowa City", "zip": "", "phone": "319-430-8567", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}, {"id": "4q3ph79dcr", "first": "House Guy", "last": "", "name": "House Guy", "address": "", "city": "Iowa City", "zip": "", "phone": "847-376-2484", "email": "", "rate": "", "notes": "", "mows": 3, "start": "2026-06-21", "services": ["Mow"], "active": true}];
+
+  // Merge without duplicating
+  const existingNames = new Set(existing.map(c => c.name.toLowerCase().trim()));
+  const toAdd = seeded_contacts.filter(c => !existingNames.has(c.name.toLowerCase().trim()));
+  const merged = [...existing, ...toAdd];
+
+  localStorage.setItem('coj_clients', JSON.stringify(merged));
+  localStorage.setItem('coj_seed_version', SEED_VERSION);
+  console.log('Seeded ' + toAdd.length + ' contacts. Total: ' + merged.length);
+})();
+</script>
+
+</body>
+</html>
