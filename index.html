@@ -1231,30 +1231,59 @@ function viewInvoiceById(id) {
 // ══════════════════════════════════════════
 //  GOOGLE SHEETS
 // ══════════════════════════════════════════
+
+// ── HARDCODED — works on every device automatically ──
+const SHEETS_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbz-iz7lZKUGOdZ8cZZ1P4hgr9IfnOKwlb0lcYg6D3Tl2b_r0W2lw_Xfllg6g1wJ9g7R/exec';
+
+function getSheetsURL() {
+  // Use saved URL if set, otherwise fall back to hardcoded default
+  return localStorage.getItem('coj_sheets_url') || SHEETS_URL_DEFAULT;
+}
+
 function saveSheetURL() {
   const url = document.getElementById('sheets-url').value.trim();
-  localStorage.setItem('coj_sheets_url', url);
-  toast('Sheets URL saved.');
+  if (url) {
+    localStorage.setItem('coj_sheets_url', url);
+    toast('Sheets URL saved.');
+  } else {
+    // Reset to default
+    localStorage.removeItem('coj_sheets_url');
+    document.getElementById('sheets-url').value = SHEETS_URL_DEFAULT;
+    toast('Reset to default URL.');
+  }
 }
+
 async function testSync() {
-  const url = localStorage.getItem('coj_sheets_url');
-  if (!url) { toast('No URL saved yet.','red'); return; }
-  try { await fetch(url+'?action=ping',{method:'GET',mode:'no-cors'}); toast('Ping sent — check your Google Sheet.'); }
-  catch(e) { toast('Connection failed. Check URL.','red'); }
-}
-async function syncAllNow() {
-  const url = localStorage.getItem('coj_sheets_url');
-  if (!url) { toast('No URL saved yet.','red'); return; }
-  toast('Syncing all data...');
-  await pushToSheets(true);
-}
-async function pushToSheets(all=false) {
-  const url = localStorage.getItem('coj_sheets_url');
-  if (!url) return;
+  const url = getSheetsURL();
+  document.getElementById('sheets-url').value = url;
   try {
-    const payload = { action:'sync', clients, jobs:all?jobs:jobs.slice(-300), invoices:all?invoices:invoices.slice(-100) };
-    fetch(url,{method:'POST',mode:'no-cors',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});
-  } catch(e){}
+    await fetch(url+'?action=ping',{method:'GET',mode:'no-cors'});
+    toast('Ping sent — check your Google Sheet.');
+  } catch(e) { toast('Connection failed. Check URL.','red'); }
+}
+
+async function syncAllNow() {
+  toast('Syncing all data to Google Sheets...');
+  await pushToSheets(true);
+  toast('Sync complete! Check your Google Sheet.');
+}
+
+async function pushToSheets(all=false) {
+  const url = getSheetsURL();
+  try {
+    const payload = {
+      action: 'sync',
+      clients,
+      jobs: all ? jobs : jobs.slice(-300),
+      invoices: all ? invoices : invoices.slice(-100)
+    };
+    fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: JSON.stringify(payload),
+      headers: {'Content-Type':'application/json'}
+    });
+  } catch(e) { console.log('Sheets sync error:', e); }
 }
 
 function downloadAppsScript() {
@@ -1325,11 +1354,10 @@ function toast(msg, type='green') {
 //  INIT
 // ══════════════════════════════════════════
 function init() {
-  const saved = localStorage.getItem('coj_sheets_url');
-  if (saved) document.getElementById('sheets-url').value = saved;
+  // Pre-fill sheets URL field with saved or default
+  document.getElementById('sheets-url').value = getSheetsURL();
   renderDashboard();
   renderCalendar();
-  // Service worker for PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
