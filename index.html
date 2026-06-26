@@ -584,7 +584,27 @@ body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var
     <div class="modal-ftr">
       <button class="btn btn-outline" onclick="closeModal('modal-invoice')">Close</button>
       <button class="btn btn-outline" onclick="copyInvoice()">📋 Copy Invoice</button>
-      <button class="btn btn-green" onclick="markCurrentPaid()">✓ Mark Paid</button>
+      <button class="btn btn-outline" id="inv-edit-btn" onclick="editCurrentInvoice()">✏ Edit</button>
+      <button class="btn btn-green" id="inv-paid-btn" onclick="markCurrentPaid()">✓ Mark Paid</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ INVOICE EDIT MODAL ════════════ -->
+<div class="modal-overlay" id="modal-inv-edit">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Edit Invoice</div><button class="modal-x" onclick="closeModal('modal-inv-edit')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label class="flbl">Invoice Date</label><input class="fi" type="date" id="inv-edit-date"></div>
+      <div class="fg" id="inv-edit-job-wrap">
+        <label class="flbl">Jobs Included</label>
+        <div id="inv-edit-job-list"></div>
+      </div>
+      <div class="fg"><label class="flbl">Custom Note</label><textarea class="fta" id="inv-edit-note" placeholder="Thank you for your business!"></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-outline" onclick="closeModal('modal-inv-edit')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoiceEdit()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -1115,6 +1135,8 @@ function generateInvoiceFromSelect() {
   save();
   closeModal('modal-inv-select');
   buildInvoiceHTML(inv, c, selectedJobs);
+  document.getElementById('inv-edit-btn').style.display = '';
+  document.getElementById('inv-paid-btn').style.display = '';
   openModal('modal-invoice');
 }
 
@@ -1137,6 +1159,8 @@ function quickInvoice(jobId, clientIdOverride=null) {
   currentInvId = invId;
   save();
   buildInvoiceHTML(inv, c, jobList);
+  document.getElementById('inv-edit-btn').style.display = '';
+  document.getElementById('inv-paid-btn').style.display = '';
   openModal('modal-invoice');
 }
 
@@ -1194,6 +1218,59 @@ function markCurrentPaid() {
   if (inv) { inv.paid=true; save(); closeModal('modal-invoice'); renderInvoices(); renderDashboard(); toast('Invoice marked as paid!'); }
 }
 
+function editCurrentInvoice() {
+  const inv = invoices.find(i=>i.id===currentInvId);
+  if (!inv) return;
+  document.getElementById('inv-edit-date').value = inv.date || todayStr();
+  document.getElementById('inv-edit-note').value = inv.note || '';
+  const clientJobs = jobs.filter(j=>j.clientId===inv.clientId);
+  const wrap = document.getElementById('inv-edit-job-wrap');
+  if (clientJobs.length) {
+    wrap.style.display = '';
+    document.getElementById('inv-edit-job-list').innerHTML = clientJobs.map(j=>`
+      <div class="tci" style="margin-bottom:6px;">
+        <input type="checkbox" id="ie-${j.id}" value="${j.id}" ${(inv.jobIds||[]).includes(j.id)?'checked':''}>
+        <label for="ie-${j.id}">${fmtDate(j.date)} — ${(j.tasks||[]).join(', ')} — $${parseFloat(j.amount||0).toFixed(2)}</label>
+      </div>`).join('');
+  } else {
+    wrap.style.display = 'none';
+  }
+  closeModal('modal-invoice');
+  openModal('modal-inv-edit');
+}
+
+function saveInvoiceEdit() {
+  const inv = invoices.find(i=>i.id===currentInvId);
+  if (!inv) return;
+  const newDate = document.getElementById('inv-edit-date').value;
+  const newNote = document.getElementById('inv-edit-note').value;
+  const newJobIds = [...document.querySelectorAll('#inv-edit-job-list input:checked')].map(cb=>cb.value);
+  // Reconcile invoiced flags: unmark jobs removed, mark jobs added
+  const oldJobIds = inv.jobIds || [];
+  oldJobIds.filter(id=>!newJobIds.includes(id)).forEach(id=>{ const j=jobs.find(jb=>jb.id===id); if(j) j.invoiced=false; });
+  newJobIds.filter(id=>!oldJobIds.includes(id)).forEach(id=>{ const j=jobs.find(jb=>jb.id===id); if(j) j.invoiced=true; });
+  const selectedJobs = jobs.filter(j=>newJobIds.includes(j.id));
+  const newTotal = selectedJobs.length
+    ? selectedJobs.reduce((s,j)=>s+(parseFloat(j.amount)||0),0)
+    : parseFloat(inv.total)||0;
+  inv.date = newDate;
+  inv.note = newNote;
+  inv.jobIds = newJobIds;
+  inv.total = newTotal;
+  save();
+  closeModal('modal-inv-edit');
+  renderInvoices();
+  renderDashboard();
+  // Re-open the preview with updated data
+  const c = clients.find(cl=>cl.id===inv.clientId)||{};
+  const jl = jobs.filter(j=>newJobIds.includes(j.id));
+  buildInvoiceHTML(inv, c, jl.length?jl:[{tasks:['Services'],date:inv.date,amount:inv.total}]);
+  document.getElementById('inv-edit-btn').style.display = '';
+  document.getElementById('inv-paid-btn').style.display = '';
+  openModal('modal-invoice');
+  toast('Invoice updated!');
+}
+
 function renderInvoices() {
   const tbody = document.getElementById('inv-tbody');
   if (!invoices.length) { tbody.innerHTML='<tr><td colspan="6" class="empty-state">No invoices yet.</td></tr>'; return; }
@@ -1225,6 +1302,8 @@ function viewInvoiceById(id) {
   const c = clients.find(cl=>cl.id===inv.clientId)||{};
   const jl = jobs.filter(j=>(inv.jobIds||[]).includes(j.id));
   buildInvoiceHTML(inv, c, jl.length?jl:[{tasks:['Services'],date:inv.date,amount:inv.total}]);
+  document.getElementById('inv-edit-btn').style.display = inv.paid ? 'none' : '';
+  document.getElementById('inv-paid-btn').style.display = inv.paid ? 'none' : '';
   openModal('modal-invoice');
 }
 
